@@ -1,0 +1,1003 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>চাল আড়ত POS — Inventory & Sales</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body { font-family: Arial, sans-serif; }
+    .modal-backdrop { background: rgba(15, 23, 42, .55); }
+  </style>
+</head>
+<body class="bg-slate-100 text-slate-800">
+  <div class="min-h-screen">
+    <header class="bg-white border-b sticky top-0 z-20">
+      <div class="max-w-7xl mx-auto px-3 sm:px-4 py-3 sm:py-4 flex flex-col gap-3">
+        <div>
+          <h1 class="text-xl sm:text-2xl font-bold">চাল আড়ত POS</h1>
+          <p class="text-xs sm:text-sm text-slate-500">Inventory Management & বিক্রয়</p>
+        </div>
+        <div class="grid grid-cols-2 sm:flex sm:flex-wrap gap-2">
+          <button id="addBrandBtn" type="button" class="px-2.5 py-2 sm:px-4 text-xs sm:text-sm rounded-lg bg-slate-800 text-white hover:bg-slate-700">+ Brand</button>
+          <button id="purchaseBtn" type="button" class="px-2.5 py-2 sm:px-4 text-xs sm:text-sm rounded-lg bg-amber-600 text-white hover:bg-amber-500">+ Purchase</button>
+          <button id="supplierPaymentBtn" type="button" class="px-2.5 py-2 sm:px-4 text-xs sm:text-sm rounded-lg bg-violet-600 text-white hover:bg-violet-500">Supplier Payment</button>
+          <button id="addProductBtn" type="button" class="px-2.5 py-2 sm:px-4 text-xs sm:text-sm rounded-lg bg-emerald-600 text-white hover:bg-emerald-500">+ Product</button>
+          <button id="sellBtn" type="button" class="px-2.5 py-2 sm:px-4 text-xs sm:text-sm rounded-lg bg-blue-600 text-white hover:bg-blue-500">+ Sell</button>
+          <button id="addCustomerBtn" type="button" class="px-2.5 py-2 sm:px-4 text-xs sm:text-sm rounded-lg bg-teal-600 text-white hover:bg-teal-500">+ Customer</button>
+          <button id="customerPaymentBtn" type="button" class="px-2.5 py-2 sm:px-4 text-xs sm:text-sm rounded-lg bg-cyan-600 text-white hover:bg-cyan-500">Customer Payment</button>
+        </div>
+      </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto p-3 sm:p-4 space-y-4 sm:space-y-5">
+      <section class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div class="bg-white rounded-xl p-5 shadow-sm">
+          <p class="text-sm text-slate-500">আজকের বিক্রি</p>
+          <p id="dailySales" class="text-3xl font-bold mt-1 text-blue-600">৳ 0</p>
+        </div>
+      </section>
+
+      <section class="bg-white rounded-xl shadow-sm overflow-hidden">
+        <div class="p-4 border-b flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
+          <div>
+            <h2 class="font-bold text-lg">Product Management</h2>
+            <p class="text-sm text-slate-500">Product edit / delete করতে পারবেন</p>
+          </div>
+          <button id="productSectionAdd" type="button" class="px-4 py-2 rounded-lg bg-emerald-600 text-white text-sm hover:bg-emerald-500 transition">+ Add Product</button>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-xs sm:text-sm">
+            <thead class="bg-slate-50">
+              <tr>
+                <th class="text-left p-2 sm:p-3">Product</th>
+                <th class="text-left p-2 sm:p-3">Brand</th>
+                <th class="text-right p-2 sm:p-3">Stock</th>
+                <th class="text-right p-2 sm:p-3">Buy/kg</th>
+                <th class="text-right p-2 sm:p-3">Sell/kg</th>
+                <th class="text-center p-2 sm:p-3">Action</th>
+              </tr>
+            </thead>
+            <tbody id="productManagementBody"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="bg-white rounded-xl shadow-sm overflow-hidden">
+        <div class="p-4 border-b flex flex-col md:flex-row gap-3 md:items-center md:justify-between">
+          <div>
+            <h2 class="font-bold text-lg">Inventory</h2>
+            <p class="text-sm text-slate-500">প্রতিটি product-এর বর্তমান stock, ক্রয়মূল্য ও brand</p>
+          </div>
+          <input id="search" class="border rounded-lg px-3 py-2 w-full md:w-72" placeholder="Product / Brand search..." />
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-xs sm:text-sm">
+            <thead class="bg-slate-50">
+              <tr>
+                <th class="text-left p-2 sm:p-3">Product</th>
+                <th class="text-left p-2 sm:p-3">Brand</th>
+                <th class="text-right p-2 sm:p-3">Stock (kg)</th>
+                <th class="text-right p-2 sm:p-3">ক্রয়মূল্য/kg</th>
+                <th class="text-right p-2 sm:p-3">বিক্রয়মূল্য/kg</th>
+                <th class="text-center p-2 sm:p-3">Action</th>
+              </tr>
+            </thead>
+            <tbody id="inventoryBody"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="bg-white rounded-xl shadow-sm overflow-hidden">
+        <div class="p-4 border-b">
+          <h2 class="font-bold text-lg">Recent Sales</h2>
+          <p class="text-sm text-slate-500">বিক্রয়ের সময় যে দামে বিক্রি করেছেন তা এখানে সংরক্ষিত হবে</p>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-xs sm:text-sm">
+            <thead class="bg-slate-50">
+              <tr>
+                <th class="text-left p-2 sm:p-3">Date</th>
+                <th class="text-left p-2 sm:p-3">Customer</th>
+                <th class="text-left p-2 sm:p-3">Product</th>
+                <th class="text-right p-2 sm:p-3">Qty (kg)</th>
+                <th class="text-right p-2 sm:p-3">Sell Price/kg</th>
+                <th class="text-right p-2 sm:p-3">Total</th>
+                <th class="text-right p-2 sm:p-3">Due</th>
+              </tr>
+            </thead>
+            <tbody id="salesBody"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="bg-white rounded-xl shadow-sm overflow-hidden">
+        <div class="p-4 border-b flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
+          <div>
+            <h2 class="font-bold text-lg">Brand Management</h2>
+            <p class="text-sm text-slate-500">Brand edit / delete করতে পারবেন</p>
+          </div>
+          <button id="brandSectionAdd" type="button" class="px-4 py-2 rounded-lg bg-slate-800 text-white text-sm hover:bg-slate-700 transition">+ Add Brand</button>
+        </div>
+        <div id="brandList" class="p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3"></div>
+      </section>
+
+      <section class="grid grid-cols-1 xl:grid-cols-2 gap-5">
+        <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+          <div class="p-4 border-b flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
+            <div>
+              <h2 class="font-bold text-lg">Supplier / Brand Due</h2>
+              <p class="text-sm text-slate-500">কোন Brand-এর কাছে কত টাকা বাকি আছে</p>
+            </div>
+            <button id="supplierDueBtn" type="button" class="px-3 py-2 rounded-lg bg-violet-600 text-white text-sm">পরিশোধ</button>
+          </div>
+          <div class="p-4 space-y-2" id="supplierDueList"></div>
+        </div>
+
+        <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+          <div class="p-4 border-b flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
+            <div>
+              <h2 class="font-bold text-lg">Customer Due</h2>
+              <p class="text-sm text-slate-500">Customer-এর phone ও বকেয়া দেখে filter করুন</p>
+            </div>
+            <select id="customerDueFilter" class="border rounded-lg px-3 py-2 text-sm">
+              <option value="all">সব Customer</option>
+              <option value="due">শুধু Due আছে</option>
+              <option value="paid">Due নেই</option>
+            </select>
+          </div>
+          <div class="p-4 space-y-2" id="customerList"></div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="max-w-7xl mx-auto px-4 py-8 text-center text-xs text-slate-400">
+      <p id="syncStatus" class="text-slate-400">Sync হচ্ছে...</p>
+      <p class="mt-1">প্রতি ২৪ ঘণ্টা পরপর data auto-backup আপনার ডিভাইসে download হয়ে যায়।</p>
+      <div class="mt-2 flex flex-wrap justify-center gap-x-4 gap-y-1">
+        <button id="syncNowBtn" type="button" class="underline hover:text-slate-600">এখনই Sync করুন</button>
+        <button id="footerBackupBtn" type="button" class="underline hover:text-slate-600">এখনই Backup নিন</button>
+        <button id="footerRestoreBtn" type="button" class="underline hover:text-slate-600">শেষ Backup Restore করুন</button>
+        <button id="footerRestoreFileBtn" type="button" class="underline hover:text-slate-600">ফাইল থেকে Restore</button>
+        <input type="file" id="restoreFileInput" accept=".json,application/json" class="hidden" />
+      </div>
+    </footer>
+  </div>
+
+  <!-- Modal -->
+  <div id="modal" class="hidden fixed inset-0 z-50 modal-backdrop items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto border border-slate-200">
+      <div class="p-4 sm:p-5 border-b flex justify-between items-center">
+        <h3 id="modalTitle" class="text-xl font-bold"></h3>
+        <button id="closeModal" type="button" class="text-2xl text-slate-400 hover:text-slate-700">&times;</button>
+      </div>
+      <form id="modalForm" class="p-4 sm:p-5 space-y-4" autocomplete="off"></form>
+    </div>
+  </div>
+
+<script>
+const KEY = "rice_arat_pos_v1";
+const BACKUP_SNAPSHOT_KEY = "rice_arat_pos_v1_last_backup";
+const BACKUP_TIME_KEY = "rice_arat_pos_v1_last_backup_time";
+const BACKUP_INTERVAL_MS = 24 * 60 * 60 * 1000; // 24 hours
+const API_URL = "/.netlify/functions/data";
+const POLL_INTERVAL_MS = 20 * 1000; // অন্য device-এর changes এই সময় পরপর check হবে
+
+const initial = {
+  brands: [
+    {id: crypto.randomUUID(), name: "Fresh"},
+    {id: crypto.randomUUID(), name: "Pran"},
+    {id: crypto.randomUUID(), name: "ACI"},
+    {id: crypto.randomUUID(), name: "Teer"},
+    {id: crypto.randomUUID(), name: "Bashundhara"}
+  ],
+  products: [],
+  sales: [],
+  purchases: [],
+  supplierPayments: [],
+  customers: [],
+  customerPayments: []
+};
+
+function normalizeDb(obj) {
+  obj.brands ||= [];
+  obj.products ||= [];
+  obj.sales ||= [];
+  obj.purchases ||= [];
+  obj.supplierPayments ||= [];
+  obj.customers ||= [];
+  obj.customerPayments ||= [];
+  return obj;
+}
+
+let db;
+try {
+  db = JSON.parse(localStorage.getItem(KEY) || "null") || initial;
+} catch {
+  db = initial;
+}
+normalizeDb(db);
+
+/* ---------- CLOUD SYNC (MongoDB via Netlify Function) ---------- */
+// localStorage সবসময় একটা তাৎক্ষণিক local cache হিসেবে থাকে — internet না থাকলেও app কাজ করবে।
+// MongoDB হলো সব device-এর জন্য আসল/authoritative data — এটা PC ও Mobile-এর মধ্যে sync রাখে।
+
+let syncing = false;
+
+function setSyncStatus(state, message) {
+  const el = document.getElementById("syncStatus");
+  if (!el) return;
+  const colors = { ok: "text-emerald-600", error: "text-red-500", busy: "text-slate-400" };
+  el.className = colors[state] || "text-slate-400";
+  el.textContent = message;
+}
+
+async function fetchRemoteData() {
+  try {
+    const res = await fetch(API_URL);
+    if (!res.ok) throw new Error("fetch failed: " + res.status);
+    return await res.json(); // null মানে সার্ভারে এখনো কোনো data নেই
+  } catch (err) {
+    return { __networkError: true };
+  }
+}
+
+async function pushRemoteData(data) {
+  try {
+    const res = await fetch(API_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    });
+    if (!res.ok) throw new Error("push failed: " + res.status);
+    setSyncStatus("ok", "✅ Sync হয়েছে — " + new Date().toLocaleTimeString("en-BD"));
+    return true;
+  } catch (err) {
+    setSyncStatus("error", "⚠️ Sync ব্যর্থ — Internet চেক করুন (data এই device-এ local-ভাবে সেভ আছে)");
+    return false;
+  }
+}
+
+async function initialCloudSync() {
+  setSyncStatus("busy", "Sync হচ্ছে...");
+  const remote = await fetchRemoteData();
+  if (remote && remote.__networkError) {
+    setSyncStatus("error", "⚠️ Cloud-এ পৌঁছানো যায়নি — Internet চেক করুন (আপাতত local data দেখাচ্ছে)");
+    return;
+  }
+  if (remote === null) {
+    // সার্ভারে এখনো কিছু নেই — এই device-এর বর্তমান data দিয়ে প্রথম copy বসাও
+    await pushRemoteData(db);
+    return;
+  }
+  db = normalizeDb(remote);
+  localStorage.setItem(KEY, JSON.stringify(db));
+  render();
+  setSyncStatus("ok", "✅ Sync হয়েছে — " + new Date().toLocaleTimeString("en-BD"));
+}
+
+async function pollRemoteData() {
+  if (syncing) return;
+  syncing = true;
+  const remote = await fetchRemoteData();
+  syncing = false;
+  if (remote && remote.__networkError) {
+    setSyncStatus("error", "⚠️ Cloud-এ পৌঁছানো যায়নি — Internet চেক করুন");
+    return;
+  }
+  if (remote === null) return;
+  db = normalizeDb(remote);
+  localStorage.setItem(KEY, JSON.stringify(db));
+  render();
+  setSyncStatus("ok", "✅ Sync হয়েছে — " + new Date().toLocaleTimeString("en-BD"));
+}
+
+function manualSync() {
+  setSyncStatus("busy", "Sync হচ্ছে...");
+  pushRemoteData(db);
+}
+
+function save() {
+  localStorage.setItem(KEY, JSON.stringify(db));
+  render();
+  pushRemoteData(db);
+}
+
+function money(n) {
+  return Number(n || 0).toLocaleString("en-BD", {minimumFractionDigits: 2, maximumFractionDigits: 2});
+}
+
+function escapeHtml(s) {
+  return String(s ?? "").replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
+}
+
+/* ---------- MODAL ---------- */
+
+function openModal(title, html, onSubmit) {
+  const modal = document.getElementById("modal");
+  document.getElementById("modalTitle").textContent = title;
+  const form = document.getElementById("modalForm");
+  form.innerHTML = html;
+  form.onsubmit = (e) => {
+    e.preventDefault();
+    onSubmit(new FormData(form));
+  };
+  modal.classList.remove("hidden");
+  modal.classList.add("flex");
+}
+
+function closeModal() {
+  const modal = document.getElementById("modal");
+  modal.classList.add("hidden");
+  modal.classList.remove("flex");
+  document.getElementById("modalForm").onsubmit = null;
+}
+
+document.getElementById("closeModal").onclick = closeModal;
+document.getElementById("modal").onclick = (e) => {
+  if (e.target.id === "modal") closeModal();
+};
+
+// নেটিভ browser confirm() পপআপ-এর বদলে সুন্দর একটা confirm card, একই modal ব্যবহার করে
+function confirmAction(message, onYes) {
+  const modal = document.getElementById("modal");
+  document.getElementById("modalTitle").textContent = "নিশ্চিত করুন";
+  const form = document.getElementById("modalForm");
+  form.onsubmit = null;
+  form.innerHTML = `
+    <p class="text-slate-700">${escapeHtml(message)}</p>
+    <div class="flex gap-3 pt-2">
+      <button type="button" id="confirmCancelBtn" class="flex-1 border rounded-lg py-2.5 font-semibold text-slate-600 hover:bg-slate-50">না, থাক</button>
+      <button type="button" id="confirmYesBtn" class="flex-1 bg-red-600 text-white rounded-lg py-2.5 font-semibold hover:bg-red-500">হ্যাঁ, Delete করুন</button>
+    </div>`;
+  modal.classList.remove("hidden");
+  modal.classList.add("flex");
+  document.getElementById("confirmCancelBtn").onclick = closeModal;
+  document.getElementById("confirmYesBtn").onclick = () => { closeModal(); onYes(); };
+}
+
+/* ---------- BRAND ---------- */
+
+function brandOptions(selected = "") {
+  return db.brands.map(b => `<option value="${b.id}" ${b.id === selected ? "selected" : ""}>${escapeHtml(b.name)}</option>`).join("");
+}
+
+function addBrand() {
+  openModal("নতুন Brand", `
+    <label class="block">
+      <span class="text-sm font-medium">Brand Name</span>
+      <input id="brandNameInput" name="name" required class="mt-1 w-full border rounded-lg px-3 py-2"
+             placeholder="যেমন: Fresh, PRAN, Bashundhara" />
+    </label>
+    <button type="submit" class="w-full bg-slate-800 text-white rounded-lg py-2.5 hover:bg-slate-700">Save Brand</button>
+  `, fd => {
+    const name = String(fd.get("name") || "").trim();
+    if (!name) return alert("Brand name লিখুন।");
+    if (db.brands.some(b => b.name.trim().toLowerCase() === name.toLowerCase()))
+      return alert("এই Brand ইতিমধ্যে আছে।");
+    db.brands.push({id: crypto.randomUUID(), name});
+    save();
+    closeModal();
+  });
+  setTimeout(() => document.getElementById("brandNameInput")?.focus(), 50);
+}
+
+function editBrand(id) {
+  const b = db.brands.find(x => x.id === id);
+  if (!b) return;
+  openModal("Edit Brand", `
+    <label class="block"><span class="text-sm font-medium">Brand Name</span>
+      <input name="name" value="${escapeHtml(b.name)}" required class="mt-1 w-full border rounded-lg px-3 py-2" />
+    </label>
+    <button type="submit" class="w-full bg-blue-600 text-white rounded-lg py-2.5">Update Brand</button>
+  `, fd => {
+    const name = String(fd.get("name") || "").trim();
+    if (!name) return alert("Brand name লিখুন।");
+    if (db.brands.some(x => x.id !== id && x.name.trim().toLowerCase() === name.toLowerCase()))
+      return alert("এই Brand ইতিমধ্যে আছে।");
+    b.name = name;
+    save();
+    closeModal();
+  });
+}
+
+function deleteBrand(id) {
+  const b = db.brands.find(x => x.id === id);
+  if (!b) return;
+  const hasProducts = db.products.some(p => p.brandId === id);
+  const hasPurchases = db.purchases.some(p => p.brandId === id);
+  if (hasProducts || hasPurchases) {
+    return alert("এই Brand-এর সাথে Product/Purchase data আছে। আগে সেগুলো সরাতে হবে।");
+  }
+  confirmAction(`"${b.name}" Brand delete করবেন?`, () => {
+    db.brands = db.brands.filter(x => x.id !== id);
+    save();
+  });
+}
+
+/* ---------- PRODUCT ---------- */
+
+function addProduct() {
+  if (!db.brands.length) return alert("আগে একটি Brand যোগ করুন।");
+  openModal("নতুন Product", `
+    <label class="block"><span class="text-sm font-medium">Product Name</span>
+      <input name="name" required class="mt-1 w-full border rounded-lg px-3 py-2" placeholder="যেমন: মিনিকেট চাল" />
+    </label>
+    <label class="block"><span class="text-sm font-medium">Brand</span>
+      <select name="brandId" required class="mt-1 w-full border rounded-lg px-3 py-2">${brandOptions()}</select>
+    </label>
+    <div class="grid grid-cols-2 gap-3">
+      <label class="block"><span class="text-sm font-medium">Initial Stock (kg)</span>
+        <input name="stock" type="number" min="0" step="0.01" value="0" required class="mt-1 w-full border rounded-lg px-3 py-2" />
+      </label>
+      <label class="block"><span class="text-sm font-medium">ক্রয়মূল্য/kg</span>
+        <input name="buyPrice" type="number" min="0" step="0.01" value="0" required class="mt-1 w-full border rounded-lg px-3 py-2" />
+      </label>
+    </div>
+    <label class="block"><span class="text-sm font-medium">বিক্রয়মূল্য/kg</span>
+      <input name="sellPrice" type="number" min="0" step="0.01" value="0" required class="mt-1 w-full border rounded-lg px-3 py-2" />
+    </label>
+    <button type="submit" class="w-full bg-emerald-600 text-white rounded-lg py-2.5">Save Product</button>
+  `, fd => {
+    const name = String(fd.get("name") || "").trim();
+    const brandId = fd.get("brandId");
+    const stock = Number(fd.get("stock") || 0);
+    const buyPrice = Number(fd.get("buyPrice") || 0);
+    const sellPrice = Number(fd.get("sellPrice") || 0);
+    if (!name || !brandId) return alert("Product name ও Brand দিন।");
+    const productId = crypto.randomUUID();
+    db.products.push({id: productId, name, brandId, stock, buyPrice, sellPrice});
+    // Initial stock মানেই Brand থেকে কেনা — তাই এটাও একটা Purchase হিসেবে জমা হবে,
+    // আর শুরুতে এই টাকা Supplier Due-তে দেখাবে (paid: 0, due: পুরো টাকা)।
+    if (stock > 0) {
+      const total = Number((stock * buyPrice).toFixed(2));
+      db.purchases.unshift({
+        id: crypto.randomUUID(), brandId, productId, productName: name,
+        qty: stock, buyPrice, total, paid: 0, due: total, date: new Date().toISOString()
+      });
+    }
+    save();
+    closeModal();
+  });
+}
+
+function editProduct(id) {
+  const p = db.products.find(x => x.id === id);
+  if (!p) return;
+  openModal("Edit Product", `
+    <label class="block"><span class="text-sm font-medium">Product Name</span>
+      <input name="name" value="${escapeHtml(p.name)}" required class="mt-1 w-full border rounded-lg px-3 py-2" />
+    </label>
+    <label class="block"><span class="text-sm font-medium">Brand</span>
+      <select name="brandId" class="mt-1 w-full border rounded-lg px-3 py-2">${brandOptions(p.brandId)}</select>
+    </label>
+    <div class="grid grid-cols-2 gap-3">
+      <label class="block"><span class="text-sm font-medium">Stock (kg)</span>
+        <input name="stock" type="number" min="0" step="0.01" value="${p.stock}" required class="mt-1 w-full border rounded-lg px-3 py-2" />
+      </label>
+      <label class="block"><span class="text-sm font-medium">ক্রয়মূল্য/kg</span>
+        <input name="buyPrice" type="number" min="0" step="0.01" value="${p.buyPrice}" required class="mt-1 w-full border rounded-lg px-3 py-2" />
+      </label>
+    </div>
+    <label class="block"><span class="text-sm font-medium">বিক্রয়মূল্য/kg</span>
+      <input name="sellPrice" type="number" min="0" step="0.01" value="${p.sellPrice}" required class="mt-1 w-full border rounded-lg px-3 py-2" />
+    </label>
+    <button type="submit" class="w-full bg-emerald-600 text-white rounded-lg py-2.5">Update Product</button>
+  `, fd => {
+    p.name = String(fd.get("name")).trim();
+    p.brandId = fd.get("brandId");
+    p.stock = Number(fd.get("stock"));
+    p.buyPrice = Number(fd.get("buyPrice"));
+    p.sellPrice = Number(fd.get("sellPrice"));
+    save(); closeModal();
+  });
+  setTimeout(() => {
+    const select = document.querySelector('#modalForm [name="brandId"]');
+    if (select) select.value = p.brandId;
+  }, 20);
+}
+
+function deleteProduct(id) {
+  const p = db.products.find(x => x.id === id);
+  if (!p) return;
+  const hasSales = db.sales.some(s => s.productId === id);
+  const hasPurchases = db.purchases.some(x => x.productId === id);
+  if (hasSales || hasPurchases) {
+    return alert("এই Product-এর Sales/Purchase history আছে। History নষ্ট না করার জন্য delete করা বন্ধ রাখা হয়েছে। Edit করে ব্যবহার করুন।");
+  }
+  confirmAction(`"${p.name}" Product delete করবেন?`, () => {
+    db.products = db.products.filter(x => x.id !== id);
+    save();
+  });
+}
+
+/* ---------- PURCHASE / SUPPLIER ---------- */
+
+function getSupplierDues() {
+  return db.brands.map(b => {
+    const purchaseDue = db.purchases.filter(x => x.brandId === b.id).reduce((s,x) => s + Number(x.due || 0), 0);
+    const paid = db.supplierPayments.filter(x => x.brandId === b.id).reduce((s,x) => s + Number(x.amount || 0), 0);
+    return {brandId: b.id, brandName: b.name, due: Math.max(0, purchaseDue - paid)};
+  });
+}
+
+function addPurchase() {
+  if (!db.brands.length || !db.products.length) return alert("আগে Brand এবং Product যোগ করুন।");
+  openModal("নতুন Purchase", `
+    <label class="block"><span class="text-sm font-medium">Brand / Supplier</span>
+      <select name="brandId" required class="mt-1 w-full border rounded-lg px-3 py-2">${brandOptions()}</select>
+    </label>
+    <label class="block"><span class="text-sm font-medium">Product</span>
+      <select name="productId" required class="mt-1 w-full border rounded-lg px-3 py-2">
+        ${db.products.map(p => {
+          const b = db.brands.find(x => x.id === p.brandId);
+          return `<option value="${p.id}">${escapeHtml(p.name)} — ${escapeHtml(b?.name || "")}</option>`;
+        }).join("")}
+      </select>
+    </label>
+    <div class="grid grid-cols-2 gap-3">
+      <label class="block"><span class="text-sm font-medium">Purchase Qty (kg)</span>
+        <input name="qty" type="number" min="0.01" step="0.01" required class="mt-1 w-full border rounded-lg px-3 py-2" />
+      </label>
+      <label class="block"><span class="text-sm font-medium">ক্রয়মূল্য / kg</span>
+        <input name="buyPrice" type="number" min="0" step="0.01" required class="mt-1 w-full border rounded-lg px-3 py-2" />
+      </label>
+    </div>
+    <div class="grid grid-cols-2 gap-3">
+      <label class="block"><span class="text-sm font-medium">এখন পরিশোধ</span>
+        <input name="paid" type="number" min="0" step="0.01" value="0" required class="mt-1 w-full border rounded-lg px-3 py-2" />
+      </label>
+      <label class="block"><span class="text-sm font-medium">Due</span>
+        <input name="due" type="number" readonly class="mt-1 w-full border rounded-lg px-3 py-2 bg-slate-50" />
+      </label>
+    </div>
+    <button type="submit" class="w-full bg-amber-600 text-white rounded-lg py-2.5">Save Purchase</button>
+  `, fd => {
+    const brandId = fd.get("brandId");
+    const productId = fd.get("productId");
+    const qty = Number(fd.get("qty"));
+    const buyPrice = Number(fd.get("buyPrice"));
+    const total = qty * buyPrice;
+    const paid = Math.min(Math.max(Number(fd.get("paid")), 0), total);
+    const due = total - paid;
+    const p = db.products.find(x => x.id === productId);
+    if (!p) return alert("Product পাওয়া যায়নি।");
+    if (p.brandId !== brandId) return alert("Product ও Brand মিলছে না।");
+    p.stock = Number((p.stock + qty).toFixed(2));
+    p.buyPrice = buyPrice;
+    db.purchases.unshift({id: crypto.randomUUID(), brandId, productId, productName: p.name, qty, buyPrice, total, paid, due, date: new Date().toISOString()});
+    save(); closeModal();
+  });
+
+  const qty = document.querySelector('#modalForm [name="qty"]');
+  const price = document.querySelector('#modalForm [name="buyPrice"]');
+  const paid = document.querySelector('#modalForm [name="paid"]');
+  const due = document.querySelector('#modalForm [name="due"]');
+  function calc() {
+    const total = Number(qty.value || 0) * Number(price.value || 0);
+    due.value = Math.max(0, total - Number(paid.value || 0)).toFixed(2);
+  }
+  [qty, price, paid].forEach(x => x.addEventListener("input", calc));
+}
+
+function paySupplier() {
+  const dues = getSupplierDues().filter(x => x.due > 0);
+  if (!dues.length) return alert("কোনো supplier/brand due নেই।");
+  openModal("Supplier Due Payment", `
+    <label class="block"><span class="text-sm font-medium">Brand</span>
+      <select name="brandId" required class="mt-1 w-full border rounded-lg px-3 py-2">
+        ${dues.map(x => `<option value="${x.brandId}">${escapeHtml(x.brandName)} — Due: ৳ ${money(x.due)}</option>`).join("")}
+      </select>
+    </label>
+    <label class="block"><span class="text-sm font-medium">পরিশোধের পরিমাণ</span>
+      <input name="amount" type="number" min="0.01" step="0.01" required class="mt-1 w-full border rounded-lg px-3 py-2" />
+    </label>
+    <button type="submit" class="w-full bg-violet-600 text-white rounded-lg py-2.5">পরিশোধ করুন</button>
+  `, fd => {
+    const brandId = fd.get("brandId");
+    const due = getSupplierDues().find(x => x.brandId === brandId)?.due || 0;
+    const amount = Number(fd.get("amount"));
+    if (amount <= 0 || amount > due) return alert("Due-এর চেয়ে বেশি পরিশোধ করা যাবে না।");
+    db.supplierPayments.unshift({id: crypto.randomUUID(), brandId, amount, date: new Date().toISOString()});
+    save(); closeModal();
+  });
+}
+
+function payCustomerDue(preselectId = "") {
+  const dues = db.customers.filter(x => Number(x.due || 0) > 0);
+  if (!dues.length) return alert("কোনো Customer-এর Due নেই।");
+  openModal("Customer Due Payment", `
+    <label class="block"><span class="text-sm font-medium">Customer</span>
+      <select name="customerId" required class="mt-1 w-full border rounded-lg px-3 py-2">
+        ${dues.map(x => `<option value="${x.id}" ${x.id === preselectId ? "selected" : ""}>${escapeHtml(x.name)} — ${escapeHtml(x.phone)} — Due: ৳ ${money(x.due)}</option>`).join("")}
+      </select>
+    </label>
+    <label class="block"><span class="text-sm font-medium">পরিশোধের পরিমাণ</span>
+      <input name="amount" type="number" min="0.01" step="0.01" required class="mt-1 w-full border rounded-lg px-3 py-2" />
+    </label>
+    <button type="submit" class="w-full bg-cyan-600 text-white rounded-lg py-2.5">পরিশোধ নিন</button>
+  `, fd => {
+    const customerId = fd.get("customerId");
+    const c = db.customers.find(x => x.id === customerId);
+    const amount = Number(fd.get("amount"));
+    if (!c) return;
+    if (amount <= 0 || amount > Number(c.due || 0)) return alert("Due-এর চেয়ে বেশি নেওয়া যাবে না।");
+    c.due = Number((Number(c.due || 0) - amount).toFixed(2));
+    db.customerPayments.unshift({id: crypto.randomUUID(), customerId, customerName: c.name, amount, date: new Date().toISOString()});
+    save(); closeModal();
+  });
+}
+
+/* ---------- CUSTOMER / SALES ---------- */
+
+function customerOptions() {
+  return db.customers.map(c => `<option value="${c.id}">${escapeHtml(c.name)} — ${escapeHtml(c.phone)}</option>`).join("");
+}
+
+function addCustomer() {
+  openModal("নতুন Customer", `
+    <label class="block"><span class="text-sm font-medium">Customer Name</span>
+      <input name="name" required class="mt-1 w-full border rounded-lg px-3 py-2" />
+    </label>
+    <label class="block"><span class="text-sm font-medium">Phone Number</span>
+      <input name="phone" required class="mt-1 w-full border rounded-lg px-3 py-2" placeholder="01XXXXXXXXX" />
+    </label>
+    <button type="submit" class="w-full bg-teal-600 text-white rounded-lg py-2.5">Save Customer</button>
+  `, fd => {
+    db.customers.push({id: crypto.randomUUID(), name: String(fd.get("name")).trim(), phone: String(fd.get("phone")).trim(), due: 0});
+    save(); closeModal();
+  });
+}
+
+function editCustomer(id) {
+  const c = db.customers.find(x => x.id === id);
+  if (!c) return;
+  openModal("Edit Customer", `
+    <label class="block"><span class="text-sm font-medium">Customer Name</span>
+      <input name="name" value="${escapeHtml(c.name)}" required class="mt-1 w-full border rounded-lg px-3 py-2" />
+    </label>
+    <label class="block"><span class="text-sm font-medium">Phone Number</span>
+      <input name="phone" value="${escapeHtml(c.phone)}" required class="mt-1 w-full border rounded-lg px-3 py-2" placeholder="01XXXXXXXXX" />
+    </label>
+    <button type="submit" class="w-full bg-blue-600 text-white rounded-lg py-2.5">Update Customer</button>
+  `, fd => {
+    const name = String(fd.get("name") || "").trim();
+    const phone = String(fd.get("phone") || "").trim();
+    if (!name || !phone) return alert("Customer name ও Phone দিন।");
+    c.name = name;
+    c.phone = phone;
+    save(); closeModal();
+  });
+}
+
+function deleteCustomer(id) {
+  const c = db.customers.find(x => x.id === id);
+  if (!c) return;
+  const hasSales = db.sales.some(s => s.customerId === id);
+  if (hasSales) {
+    return alert("এই Customer-এর Sales history আছে। History নষ্ট না করার জন্য delete করা বন্ধ রাখা হয়েছে। Edit করে ব্যবহার করুন।");
+  }
+  confirmAction(`"${c.name}" Customer delete করবেন?`, () => {
+    db.customers = db.customers.filter(x => x.id !== id);
+    save();
+  });
+}
+
+function sellProduct() {
+  const available = db.products.filter(p => p.stock > 0);
+  if (!available.length) return alert("Inventory-তে stock নেই।");
+
+  openModal("নতুন Sale", `
+    <label class="block"><span class="text-sm font-medium">Customer</span>
+      <select id="sellCustomerSelect" name="customerId" required class="mt-1 w-full border rounded-lg px-3 py-2">
+        <option value="__new__">+ নতুন Customer (নাম লিখে সরাসরি বিক্রি করুন)</option>
+        ${customerOptions()}
+      </select>
+    </label>
+    <div id="newCustomerFields" class="grid grid-cols-2 gap-3">
+      <label class="block"><span class="text-sm font-medium">নতুন Customer-এর নাম</span>
+        <input id="newCustomerName" name="newCustomerName" autofocus class="mt-1 w-full border rounded-lg px-3 py-2" placeholder="নাম" />
+      </label>
+      <label class="block"><span class="text-sm font-medium">Phone Number</span>
+        <input id="newCustomerPhone" name="newCustomerPhone" class="mt-1 w-full border rounded-lg px-3 py-2" placeholder="01XXXXXXXXX" />
+      </label>
+    </div>
+    <label class="block"><span class="text-sm font-medium">Product</span>
+      <select id="sellProduct" name="productId" required class="mt-1 w-full border rounded-lg px-3 py-2">
+        ${available.map(p => `<option value="${p.id}">${escapeHtml(p.name)} — ${p.stock}kg</option>`).join("")}
+      </select>
+    </label>
+    <div class="grid grid-cols-2 gap-3">
+      <label class="block"><span class="text-sm font-medium">Qty (kg)</span>
+        <input name="qty" type="number" min="0.01" step="0.01" required class="mt-1 w-full border rounded-lg px-3 py-2" />
+      </label>
+      <label class="block"><span class="text-sm font-medium">Sell Price/kg</span>
+        <input name="sellPrice" type="number" min="0" step="0.01" required class="mt-1 w-full border rounded-lg px-3 py-2" />
+      </label>
+    </div>
+    <div class="grid grid-cols-2 gap-3">
+      <label class="block"><span class="text-sm font-medium">Paid Now</span>
+        <input name="paid" type="number" min="0" step="0.01" value="0" required class="mt-1 w-full border rounded-lg px-3 py-2" />
+      </label>
+      <label class="block"><span class="text-sm font-medium">Due</span>
+        <input name="due" type="number" readonly class="mt-1 w-full border rounded-lg px-3 py-2 bg-slate-50" />
+      </label>
+    </div>
+    <button type="submit" class="w-full bg-blue-600 text-white rounded-lg py-2.5">Save Sale</button>
+  `, fd => {
+    const productId = fd.get("productId");
+    const customerId = fd.get("customerId");
+    const p = db.products.find(x => x.id === productId);
+
+    let c;
+    if (customerId === "__new__") {
+      const name = String(fd.get("newCustomerName") || "").trim();
+      const phone = String(fd.get("newCustomerPhone") || "").trim();
+      if (!name || !phone) return alert("নতুন Customer-এর নাম ও Phone দিন।");
+      c = {id: crypto.randomUUID(), name, phone, due: 0};
+      db.customers.push(c);
+    } else {
+      c = db.customers.find(x => x.id === customerId);
+    }
+
+    const qty = Number(fd.get("qty"));
+    const price = Number(fd.get("sellPrice"));
+    const total = qty * price;
+    const paid = Math.min(Math.max(Number(fd.get("paid")), 0), total);
+    if (!p || !c || qty <= 0 || qty > p.stock) return alert("Invalid product/quantity.");
+    p.stock = Number((p.stock - qty).toFixed(2));
+    c.due = Number((c.due || 0) + (total - paid));
+    db.sales.unshift({id: crypto.randomUUID(), productId: p.id, productName: p.name, customerId: c.id, customerName: c.name, customerPhone: c.phone, qty, sellPrice: price, total, paid, due: total - paid, date: new Date().toISOString()});
+    save(); closeModal();
+  });
+
+  const custSelect = document.getElementById("sellCustomerSelect");
+  const newFields = document.getElementById("newCustomerFields");
+  const newName = document.getElementById("newCustomerName");
+  const newPhone = document.getElementById("newCustomerPhone");
+  function toggleCustomerFields() {
+    const isNew = custSelect.value === "__new__";
+    newFields.style.display = isNew ? "grid" : "none";
+  }
+  custSelect.addEventListener("change", toggleCustomerFields);
+  toggleCustomerFields();
+
+  const productSel = document.getElementById("sellProduct");
+  const qty = document.querySelector('#modalForm [name="qty"]');
+  const price = document.querySelector('#modalForm [name="sellPrice"]');
+  const paid = document.querySelector('#modalForm [name="paid"]');
+  const due = document.querySelector('#modalForm [name="due"]');
+  function calc() {
+    const total = Number(qty.value || 0) * Number(price.value || 0);
+    due.value = Math.max(0, total - Number(paid.value || 0)).toFixed(2);
+  }
+  function fillDefaultPrice() {
+    const p = db.products.find(x => x.id === productSel.value);
+    if (p) price.value = p.sellPrice;
+    calc();
+  }
+  productSel.addEventListener("change", fillDefaultPrice);
+  [qty, price, paid].forEach(x => x.addEventListener("input", calc));
+  fillDefaultPrice();
+  setTimeout(() => newName.focus(), 50);
+}
+
+function quickSell(id) {
+  const p = db.products.find(x => x.id === id);
+  if (!p || p.stock <= 0) return alert("এই product-এর stock শেষ।");
+  sellProduct();
+  setTimeout(() => {
+    const sel = document.getElementById("sellProduct");
+    if (sel) {
+      sel.value = id;
+      sel.dispatchEvent(new Event("change"));
+    }
+  }, 0);
+}
+
+/* ---------- RENDER ---------- */
+
+function renderManagement() {
+  document.getElementById("brandList").innerHTML = db.brands.length ? db.brands.map(b => `
+    <div class="border rounded-xl p-4 bg-slate-50 flex items-center justify-between gap-3">
+      <div><div class="font-semibold">${escapeHtml(b.name)}</div><div class="text-xs text-slate-500">${db.products.filter(p => p.brandId === b.id).length} products</div></div>
+      <div class="flex gap-2">
+        <button type="button" onclick="editBrand('${b.id}')" class="px-3 py-1.5 rounded-lg bg-blue-50 border border-blue-200 text-blue-700 text-xs font-semibold hover:bg-blue-100">Edit</button>
+        <button type="button" onclick="deleteBrand('${b.id}')" class="px-3 py-1.5 rounded-lg bg-red-50 border border-red-200 text-red-700 text-xs font-semibold hover:bg-red-100">Delete</button>
+      </div>
+    </div>`).join("") : `<div class="text-slate-400">কোনো Brand নেই।</div>`;
+
+  document.getElementById("productManagementBody").innerHTML = db.products.length ? db.products.map(p => {
+    const b = db.brands.find(x => x.id === p.brandId);
+    return `<tr class="border-t">
+      <td class="p-2 sm:p-3 font-medium">${escapeHtml(p.name)}</td>
+      <td class="p-2 sm:p-3">${escapeHtml(b?.name || "—")}</td>
+      <td class="p-2 sm:p-3 text-right">${p.stock} kg</td>
+      <td class="p-2 sm:p-3 text-right">৳ ${money(p.buyPrice)}</td>
+      <td class="p-2 sm:p-3 text-right">৳ ${money(p.sellPrice)}</td>
+      <td class="p-2 sm:p-3 text-center whitespace-nowrap">
+        <button type="button" onclick="editProduct('${p.id}')" class="px-3 py-1.5 rounded-lg bg-blue-50 border border-blue-200 text-blue-700 text-xs font-semibold hover:bg-blue-100 mr-1">Edit</button>
+        <button type="button" onclick="deleteProduct('${p.id}')" class="px-3 py-1.5 rounded-lg bg-red-50 border border-red-200 text-red-700 text-xs font-semibold hover:bg-red-100">Delete</button>
+      </td>
+    </tr>`;
+  }).join("") : `<tr><td colspan="6" class="p-6 text-center text-slate-400">কোনো Product নেই।</td></tr>`;
+}
+
+function renderCustomers() {
+  const list = document.getElementById("customerList");
+  const filter = document.getElementById("customerDueFilter")?.value || "all";
+  const rows = db.customers.filter(c => filter === "all" || (filter === "due" && Number(c.due || 0) > 0) || (filter === "paid" && Number(c.due || 0) <= 0));
+  list.innerHTML = rows.length ? rows.map(c => `
+    <div class="border rounded-lg p-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+      <div>
+        <div class="font-semibold">${escapeHtml(c.name)}</div>
+        <div class="text-sm text-slate-500">${escapeHtml(c.phone)}</div>
+      </div>
+      <div class="flex flex-col sm:items-end gap-2">
+        <div class="sm:text-right">
+          <div class="font-bold ${Number(c.due || 0) > 0 ? 'text-red-600' : 'text-emerald-600'}">
+            ${Number(c.due || 0) > 0 ? 'Due: ৳ ' + money(c.due) : 'No Due'}
+          </div>
+          ${Number(c.due || 0) > 0 ? `<a class="text-sm text-blue-600 hover:underline" href="sms:${escapeHtml(c.phone)}?body=${encodeURIComponent("ভাই, আপনার বকেয়া ৳ " + money(c.due) + "। অনুগ্রহ করে পরিশোধ করবেন।")}">SMS Reminder</a>` : ''}
+        </div>
+        <div class="flex flex-wrap gap-2">
+          ${Number(c.due || 0) > 0 ? `<button type="button" onclick="payCustomerDue('${c.id}')" class="px-3 py-1.5 rounded-lg bg-cyan-50 border border-cyan-200 text-cyan-700 text-xs font-semibold hover:bg-cyan-100">Payment নিন</button>` : ''}
+          <button type="button" onclick="editCustomer('${c.id}')" class="px-3 py-1.5 rounded-lg bg-blue-50 border border-blue-200 text-blue-700 text-xs font-semibold hover:bg-blue-100">Edit</button>
+          <button type="button" onclick="deleteCustomer('${c.id}')" class="px-3 py-1.5 rounded-lg bg-red-50 border border-red-200 text-red-700 text-xs font-semibold hover:bg-red-100">Delete</button>
+        </div>
+      </div>
+    </div>`).join("") : `<div class="text-center text-slate-400 py-6">কোনো customer পাওয়া যায়নি।</div>`;
+
+  const supplier = document.getElementById("supplierDueList");
+  const dues = getSupplierDues();
+  supplier.innerHTML = dues.length ? dues.map(x => `
+    <div class="border rounded-lg p-3 flex items-center justify-between">
+      <div class="font-semibold">${escapeHtml(x.brandName)}</div>
+      <div class="${x.due > 0 ? 'text-red-600' : 'text-emerald-600'} font-bold">${x.due > 0 ? '৳ ' + money(x.due) : 'Paid'}</div>
+    </div>`).join("") : `<div class="text-center text-slate-400 py-6">কোনো supplier data নেই।</div>`;
+}
+
+function render() {
+  const now = new Date();
+  const dailySales = db.sales.filter(s => {
+    const d = new Date(s.date);
+    return d.toDateString() === now.toDateString();
+  }).reduce((sum, s) => sum + Number(s.total || 0), 0);
+  document.getElementById("dailySales").textContent = "৳ " + money(dailySales);
+
+  renderManagement();
+
+  const q = (document.getElementById("search").value || "").toLowerCase();
+  const products = db.products.filter(p => {
+    const b = db.brands.find(x => x.id === p.brandId);
+    return (p.name + " " + (b?.name || "")).toLowerCase().includes(q);
+  });
+  document.getElementById("inventoryBody").innerHTML = products.length ? products.map(p => {
+    const b = db.brands.find(x => x.id === p.brandId);
+    return `<tr class="border-t">
+      <td class="p-2 sm:p-3 font-medium">${escapeHtml(p.name)}</td>
+      <td class="p-2 sm:p-3">${escapeHtml(b?.name || "—")}</td>
+      <td class="p-2 sm:p-3 text-right font-semibold ${p.stock < 500 ? 'text-red-600' : ''}">${p.stock.toLocaleString("en-BD")} kg</td>
+      <td class="p-2 sm:p-3 text-right">৳ ${money(p.buyPrice)}</td>
+      <td class="p-2 sm:p-3 text-right">৳ ${money(p.sellPrice)}</td>
+      <td class="p-2 sm:p-3 text-center"><button type="button" onclick="quickSell('${p.id}')" class="px-3 py-1.5 rounded-lg bg-blue-50 text-blue-700 text-xs font-semibold hover:bg-blue-100">Sell</button></td>
+    </tr>`;
+  }).join("") : `<tr><td colspan="6" class="p-8 text-center text-slate-400">কোনো product পাওয়া যায়নি। + Product দিয়ে যোগ করুন।</td></tr>`;
+
+  renderCustomers();
+
+  document.getElementById("salesBody").innerHTML = db.sales.length ? db.sales.slice(0, 20).map(s => `
+    <tr class="border-t">
+      <td class="p-2 sm:p-3">${new Date(s.date).toLocaleString("en-BD")}</td>
+      <td class="p-2 sm:p-3">${escapeHtml(s.customerName || "—")}<div class="text-xs text-slate-400">${escapeHtml(s.customerPhone || "")}</div></td>
+      <td class="p-2 sm:p-3">${escapeHtml(s.productName)}</td>
+      <td class="p-2 sm:p-3 text-right">${s.qty} kg</td>
+      <td class="p-2 sm:p-3 text-right">৳ ${money(s.sellPrice)}</td>
+      <td class="p-2 sm:p-3 text-right font-semibold">৳ ${money(s.total)}</td>
+      <td class="p-2 sm:p-3 text-right ${Number(s.due || 0) > 0 ? 'text-red-600 font-semibold' : ''}">৳ ${money(s.due || 0)}</td>
+    </tr>`).join("") : `<tr><td colspan="7" class="p-8 text-center text-slate-400">এখনো কোনো sale নেই।</td></tr>`;
+}
+
+/* ---------- BACKUP / RESTORE ---------- */
+
+function triggerFileDownload(dataStr) {
+  const blob = new Blob([dataStr], {type: "application/json"});
+  const url = URL.createObjectURL(blob);
+  const dateStr = new Date().toISOString().slice(0, 10);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `rice_arat_pos_backup_${dateStr}.json`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+function downloadBackup() {
+  const dataStr = JSON.stringify(db, null, 2);
+  triggerFileDownload(dataStr);
+  localStorage.setItem(BACKUP_SNAPSHOT_KEY, dataStr);
+  localStorage.setItem(BACKUP_TIME_KEY, String(Date.now()));
+}
+
+function autoBackupCheck() {
+  const last = Number(localStorage.getItem(BACKUP_TIME_KEY) || 0);
+  if (Date.now() - last >= BACKUP_INTERVAL_MS) {
+    downloadBackup();
+  }
+}
+
+function applyRestoredData(parsed) {
+  db = normalizeDb(parsed);
+  save(); // এটা MongoDB-তেও push হয়ে যাবে, তাই restore সব device-এই ছড়িয়ে পড়বে
+  alert("Backup সফলভাবে restore হয়েছে।");
+}
+
+function quickRestoreLastBackup() {
+  const snap = localStorage.getItem(BACKUP_SNAPSHOT_KEY);
+  if (!snap) return alert("এখনো কোনো Auto-Backup তৈরি হয়নি। কিছুক্ষণ ব্যবহার করার পর আবার চেষ্টা করুন, অথবা \"ফাইল থেকে Restore\" ব্যবহার করুন।");
+  let parsed;
+  try {
+    parsed = JSON.parse(snap);
+  } catch {
+    return alert("সংরক্ষিত Backup data নষ্ট হয়ে গেছে। \"ফাইল থেকে Restore\" ব্যবহার করুন।");
+  }
+  const t = Number(localStorage.getItem(BACKUP_TIME_KEY) || 0);
+  const when = t ? new Date(t).toLocaleString("en-BD") : "অজানা সময়";
+  confirmAction(`সর্বশেষ Backup (${when}) থেকে data ফিরিয়ে আনতে চান? বর্তমান data মুছে গিয়ে এটা বসে যাবে।`, () => {
+    applyRestoredData(parsed);
+  });
+}
+
+function restoreBackupFile(file) {
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    let parsed;
+    try {
+      parsed = JSON.parse(e.target.result);
+      if (!parsed || typeof parsed !== "object" || !Array.isArray(parsed.brands)) {
+        throw new Error("invalid structure");
+      }
+    } catch {
+      alert("এই ফাইলটা সঠিক Backup ফাইল না। সঠিক .json backup ফাইল বেছে নিন।");
+      return;
+    }
+    confirmAction("এই Backup ফাইল থেকে data restore করলে বর্তমান সব data মুছে গিয়ে Backup-এর data বসে যাবে। আগাতে চান?", () => {
+      applyRestoredData(parsed);
+    });
+  };
+  reader.readAsText(file);
+}
+
+/* ---------- BINDINGS ---------- */
+
+document.getElementById("addBrandBtn").onclick = addBrand;
+document.getElementById("brandSectionAdd").onclick = addBrand;
+document.getElementById("addProductBtn").onclick = addProduct;
+document.getElementById("productSectionAdd").onclick = addProduct;
+document.getElementById("purchaseBtn").onclick = addPurchase;
+document.getElementById("supplierPaymentBtn").onclick = paySupplier;
+document.getElementById("supplierDueBtn").onclick = paySupplier;
+document.getElementById("sellBtn").onclick = sellProduct;
+document.getElementById("addCustomerBtn").onclick = addCustomer;
+document.getElementById("customerPaymentBtn").onclick = () => payCustomerDue();
+document.getElementById("search").oninput = render;
+document.getElementById("customerDueFilter").onchange = renderCustomers;
+document.getElementById("footerBackupBtn").onclick = downloadBackup;
+document.getElementById("footerRestoreBtn").onclick = quickRestoreLastBackup;
+document.getElementById("footerRestoreFileBtn").onclick = () => document.getElementById("restoreFileInput").click();
+document.getElementById("restoreFileInput").onchange = (e) => {
+  const file = e.target.files[0];
+  if (file) restoreBackupFile(file);
+  e.target.value = "";
+};
+document.getElementById("syncNowBtn").onclick = manualSync;
+
+render(); // local cache দিয়ে সাথে সাথে দেখানো — internet slow থাকলেও UI blank থাকবে না
+initialCloudSync(); // তারপর MongoDB থেকে latest data টেনে আনবে
+setInterval(pollRemoteData, POLL_INTERVAL_MS); // অন্য device-এর changes নিয়মিত check হবে
+autoBackupCheck();
+setInterval(autoBackupCheck, 30 * 60 * 1000); // প্রতি ৩০ মিনিটে চেক করবে, ২৪ ঘণ্টা পার হলে backup নেবে
+</script>
+</body>
+</html>
