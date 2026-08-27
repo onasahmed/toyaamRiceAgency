@@ -185,7 +185,7 @@
       </section>
     </main>
 
-    <!-- <footer class="max-w-7xl mx-auto px-4 py-8 text-center text-xs text-slate-400">
+    <footer class="max-w-7xl mx-auto px-4 py-8 text-center text-xs text-slate-400">
       <p id="syncStatus" class="text-slate-400">Sync হচ্ছে...</p>
       <p class="mt-1">প্রতি ২৪ ঘণ্টা পরপর data auto-backup আপনার ডিভাইসে download হয়ে যায়।</p>
       <div class="mt-2 flex flex-wrap justify-center gap-x-4 gap-y-1">
@@ -195,7 +195,7 @@
         <button id="footerRestoreFileBtn" type="button" class="underline hover:text-slate-600">ফাইল থেকে Restore</button>
         <input type="file" id="restoreFileInput" accept=".json,application/json" class="hidden" />
       </div>
-    </footer> -->
+    </footer>
   </div>
 
   <!-- Modal -->
@@ -1143,74 +1143,74 @@ function render() {
 
 /* ---------- BACKUP / RESTORE ---------- */
 
-// function triggerFileDownload(dataStr) {
-//   const blob = new Blob([dataStr], {type: "application/json"});
-//   const url = URL.createObjectURL(blob);
-//   const dateStr = new Date().toISOString().slice(0, 10);
-//   const a = document.createElement("a");
-//   a.href = url;
-//   a.download = `rice_arat_pos_backup_${dateStr}.json`;
-//   document.body.appendChild(a);
-//   a.click();
-//   document.body.removeChild(a);
-//   URL.revokeObjectURL(url);
-// }
+function triggerFileDownload(dataStr) {
+  const blob = new Blob([dataStr], {type: "application/json"});
+  const url = URL.createObjectURL(blob);
+  const dateStr = new Date().toISOString().slice(0, 10);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `rice_arat_pos_backup_${dateStr}.json`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
 
-// function downloadBackup() {
-//   const dataStr = JSON.stringify(db, null, 2);
-//   triggerFileDownload(dataStr);
-//   localStorage.setItem(BACKUP_SNAPSHOT_KEY, dataStr);
-//   localStorage.setItem(BACKUP_TIME_KEY, String(Date.now()));
-// }
+function downloadBackup() {
+  const dataStr = JSON.stringify(db, null, 2);
+  triggerFileDownload(dataStr);
+  localStorage.setItem(BACKUP_SNAPSHOT_KEY, dataStr);
+  localStorage.setItem(BACKUP_TIME_KEY, String(Date.now()));
+}
 
-// function autoBackupCheck() {
-//   const last = Number(localStorage.getItem(BACKUP_TIME_KEY) || 0);
-//   if (Date.now() - last >= BACKUP_INTERVAL_MS) {
-//     downloadBackup();
-//   }
-// }
+function autoBackupCheck() {
+  const last = Number(localStorage.getItem(BACKUP_TIME_KEY) || 0);
+  if (Date.now() - last >= BACKUP_INTERVAL_MS) {
+    downloadBackup();
+  }
+}
 
-// function applyRestoredData(parsed) {
-//   db = normalizeDb(parsed);
-//   save(); // এটা MongoDB-তেও push হয়ে যাবে, তাই restore সব device-এই ছড়িয়ে পড়বে
-//   alert("Backup সফলভাবে restore হয়েছে।");
-// }
+function applyRestoredData(parsed) {
+  db = normalizeDb(parsed);
+  save(); // এটা MongoDB-তেও push হয়ে যাবে, তাই restore সব device-এই ছড়িয়ে পড়বে
+  alert("Backup সফলভাবে restore হয়েছে।");
+}
 
-// function quickRestoreLastBackup() {
-//   const snap = localStorage.getItem(BACKUP_SNAPSHOT_KEY);
-//   if (!snap) return alert("এখনো কোনো Auto-Backup তৈরি হয়নি। কিছুক্ষণ ব্যবহার করার পর আবার চেষ্টা করুন, অথবা \"ফাইল থেকে Restore\" ব্যবহার করুন।");
-//   let parsed;
-//   try {
-//     parsed = JSON.parse(snap);
-//   } catch {
-//     return alert("সংরক্ষিত Backup data নষ্ট হয়ে গেছে। \"ফাইল থেকে Restore\" ব্যবহার করুন।");
-//   }
-//   const t = Number(localStorage.getItem(BACKUP_TIME_KEY) || 0);
-//   const when = t ? new Date(t).toLocaleString("en-BD") : "অজানা সময়";
-//   confirmAction(`সর্বশেষ Backup (${when}) থেকে data ফিরিয়ে আনতে চান? বর্তমান data মুছে গিয়ে এটা বসে যাবে।`, () => {
-//     applyRestoredData(parsed);
-//   });
-// }
+function quickRestoreLastBackup() {
+  const snap = localStorage.getItem(BACKUP_SNAPSHOT_KEY);
+  if (!snap) return alert("এখনো কোনো Auto-Backup তৈরি হয়নি। কিছুক্ষণ ব্যবহার করার পর আবার চেষ্টা করুন, অথবা \"ফাইল থেকে Restore\" ব্যবহার করুন।");
+  let parsed;
+  try {
+    parsed = JSON.parse(snap);
+  } catch {
+    return alert("সংরক্ষিত Backup data নষ্ট হয়ে গেছে। \"ফাইল থেকে Restore\" ব্যবহার করুন।");
+  }
+  const t = Number(localStorage.getItem(BACKUP_TIME_KEY) || 0);
+  const when = t ? new Date(t).toLocaleString("en-BD") : "অজানা সময়";
+  confirmAction(`সর্বশেষ Backup (${when}) থেকে data ফিরিয়ে আনতে চান? বর্তমান data মুছে গিয়ে এটা বসে যাবে।`, () => {
+    applyRestoredData(parsed);
+  });
+}
 
-// function restoreBackupFile(file) {
-//   const reader = new FileReader();
-//   reader.onload = (e) => {
-//     let parsed;
-//     try {
-//       parsed = JSON.parse(e.target.result);
-//       if (!parsed || typeof parsed !== "object" || !Array.isArray(parsed.brands)) {
-//         throw new Error("invalid structure");
-//       }
-//     } catch {
-//       alert("এই ফাইলটা সঠিক Backup ফাইল না। সঠিক .json backup ফাইল বেছে নিন।");
-//       return;
-//     }
-//     confirmAction("এই Backup ফাইল থেকে data restore করলে বর্তমান সব data মুছে গিয়ে Backup-এর data বসে যাবে। আগাতে চান?", () => {
-//       applyRestoredData(parsed);
-//     });
-//   };
-//   reader.readAsText(file);
-// }
+function restoreBackupFile(file) {
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    let parsed;
+    try {
+      parsed = JSON.parse(e.target.result);
+      if (!parsed || typeof parsed !== "object" || !Array.isArray(parsed.brands)) {
+        throw new Error("invalid structure");
+      }
+    } catch {
+      alert("এই ফাইলটা সঠিক Backup ফাইল না। সঠিক .json backup ফাইল বেছে নিন।");
+      return;
+    }
+    confirmAction("এই Backup ফাইল থেকে data restore করলে বর্তমান সব data মুছে গিয়ে Backup-এর data বসে যাবে। আগাতে চান?", () => {
+      applyRestoredData(parsed);
+    });
+  };
+  reader.readAsText(file);
+}
 
 /* ---------- BINDINGS ---------- */
 
