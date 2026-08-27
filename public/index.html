@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>চাল আড়ত POS — Inventory & Sales</title>
+  <title>Toyaam Rice POS — Inventory & Sales</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
     body { font-family: Arial, sans-serif; }
@@ -12,10 +12,10 @@
 </head>
 <body class="bg-slate-100 text-slate-800">
   <div class="min-h-screen">
-    <header class="bg-white border-b sticky top-0 z-20">
+    <header class="bg-white border-b sm:sticky sm:top-0 z-20">
       <div class="max-w-7xl mx-auto px-3 sm:px-4 py-3 sm:py-4 flex flex-col gap-3">
         <div>
-          <h1 class="text-xl sm:text-2xl font-bold">চাল আড়ত POS</h1>
+          <h1 class="text-xl sm:text-2xl font-bold">Toyaam Rice POS</h1>
           <p class="text-xs sm:text-sm text-slate-500">Inventory Management & বিক্রয়</p>
         </div>
         <div class="grid grid-cols-2 sm:flex sm:flex-wrap gap-2">
@@ -46,16 +46,19 @@
           </div>
           <button id="productSectionAdd" type="button" class="px-4 py-2 rounded-lg bg-emerald-600 text-white text-sm hover:bg-emerald-500 transition">+ Add Product</button>
         </div>
-        <div class="overflow-x-auto">
-          <table class="w-full text-xs sm:text-sm">
+        <!-- Mobile: card list -->
+        <div id="productManagementCards" class="sm:hidden divide-y"></div>
+        <!-- Desktop/tablet: table -->
+        <div class="hidden sm:block overflow-x-auto">
+          <table class="w-full text-sm">
             <thead class="bg-slate-50">
               <tr>
-                <th class="text-left p-2 sm:p-3">Product</th>
-                <th class="text-left p-2 sm:p-3">Brand</th>
-                <th class="text-right p-2 sm:p-3">Stock</th>
-                <th class="text-right p-2 sm:p-3">Buy/kg</th>
-                <th class="text-right p-2 sm:p-3">Sell/kg</th>
-                <th class="text-center p-2 sm:p-3">Action</th>
+                <th class="text-left p-3">Product</th>
+                <th class="text-left p-3">Brand</th>
+                <th class="text-right p-3">Stock</th>
+                <th class="text-right p-3">Buy/kg</th>
+                <th class="text-right p-3">Sell/kg</th>
+                <th class="text-center p-3">Action</th>
               </tr>
             </thead>
             <tbody id="productManagementBody"></tbody>
@@ -71,16 +74,19 @@
           </div>
           <input id="search" class="border rounded-lg px-3 py-2 w-full md:w-72" placeholder="Product / Brand search..." />
         </div>
-        <div class="overflow-x-auto">
-          <table class="w-full text-xs sm:text-sm">
+        <!-- Mobile: card list -->
+        <div id="inventoryCards" class="sm:hidden divide-y"></div>
+        <!-- Desktop/tablet: table -->
+        <div class="hidden sm:block overflow-x-auto">
+          <table class="w-full text-sm">
             <thead class="bg-slate-50">
               <tr>
-                <th class="text-left p-2 sm:p-3">Product</th>
-                <th class="text-left p-2 sm:p-3">Brand</th>
-                <th class="text-right p-2 sm:p-3">Stock (kg)</th>
-                <th class="text-right p-2 sm:p-3">ক্রয়মূল্য/kg</th>
-                <th class="text-right p-2 sm:p-3">বিক্রয়মূল্য/kg</th>
-                <th class="text-center p-2 sm:p-3">Action</th>
+                <th class="text-left p-3">Product</th>
+                <th class="text-left p-3">Brand</th>
+                <th class="text-right p-3">Stock (kg)</th>
+                <th class="text-right p-3">ক্রয়মূল্য/kg</th>
+                <th class="text-right p-3">বিক্রয়মূল্য/kg</th>
+                <th class="text-center p-3">Action</th>
               </tr>
             </thead>
             <tbody id="inventoryBody"></tbody>
@@ -93,20 +99,48 @@
           <h2 class="font-bold text-lg">Recent Sales</h2>
           <p class="text-sm text-slate-500">বিক্রয়ের সময় যে দামে বিক্রি করেছেন তা এখানে সংরক্ষিত হবে</p>
         </div>
-        <div class="overflow-x-auto">
-          <table class="w-full text-xs sm:text-sm">
+        <!-- Mobile: card list -->
+        <div id="salesCards" class="sm:hidden divide-y"></div>
+        <!-- Desktop/tablet: table -->
+        <div class="hidden sm:block overflow-x-auto">
+          <table class="w-full text-sm">
             <thead class="bg-slate-50">
               <tr>
-                <th class="text-left p-2 sm:p-3">Date</th>
-                <th class="text-left p-2 sm:p-3">Customer</th>
-                <th class="text-left p-2 sm:p-3">Product</th>
-                <th class="text-right p-2 sm:p-3">Qty (kg)</th>
-                <th class="text-right p-2 sm:p-3">Sell Price/kg</th>
-                <th class="text-right p-2 sm:p-3">Total</th>
-                <th class="text-right p-2 sm:p-3">Due</th>
+                <th class="text-left p-3">Date</th>
+                <th class="text-left p-3">Customer</th>
+                <th class="text-left p-3">Product</th>
+                <th class="text-right p-3">Qty (kg)</th>
+                <th class="text-right p-3">Sell Price/kg</th>
+                <th class="text-right p-3">Total</th>
+                <th class="text-right p-3">Due</th>
+                <th class="text-center p-3">Action</th>
               </tr>
             </thead>
             <tbody id="salesBody"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="bg-white rounded-xl shadow-sm overflow-hidden">
+        <div class="p-4 border-b">
+          <h2 class="font-bold text-lg">Recent Returns</h2>
+          <p class="text-sm text-slate-500">বিক্রি হওয়া চাল থেকে ফেরত আসা পরিমাণ এখানে দেখাবে</p>
+        </div>
+        <!-- Mobile: card list -->
+        <div id="returnsCards" class="sm:hidden divide-y"></div>
+        <!-- Desktop/tablet: table -->
+        <div class="hidden sm:block overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead class="bg-slate-50">
+              <tr>
+                <th class="text-left p-3">Date</th>
+                <th class="text-left p-3">Customer</th>
+                <th class="text-left p-3">Product</th>
+                <th class="text-right p-3">Qty (kg)</th>
+                <th class="text-right p-3">মূল্য ফেরত</th>
+              </tr>
+            </thead>
+            <tbody id="returnsBody"></tbody>
           </table>
         </div>
       </section>
@@ -196,7 +230,8 @@ const initial = {
   purchases: [],
   supplierPayments: [],
   customers: [],
-  customerPayments: []
+  customerPayments: [],
+  returns: []
 };
 
 function normalizeDb(obj) {
@@ -207,6 +242,7 @@ function normalizeDb(obj) {
   obj.supplierPayments ||= [];
   obj.customers ||= [];
   obj.customerPayments ||= [];
+  obj.returns ||= [];
   return obj;
 }
 
@@ -309,6 +345,27 @@ function money(n) {
 
 function escapeHtml(s) {
   return String(s ?? "").replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
+}
+
+// মোট stock (kg) কে বস্তার সাইজ দিয়ে ভাগ করে কয়টা পূর্ণ বস্তা + খোলা বস্তায় কত kg আছে বের করে
+function bagBreakdown(stockKg, sackSize) {
+  const size = Number(sackSize) || 0;
+  if (!size) return null;
+  const EPS = 1e-6;
+  const full = Math.floor((Number(stockKg) + EPS) / size);
+  let remainder = Number((Number(stockKg) - full * size).toFixed(2));
+  if (remainder < 0) remainder = 0;
+  return { full, size, remainder };
+}
+
+function bagBreakdownLabel(stockKg, sackSize) {
+  const bd = bagBreakdown(stockKg, sackSize);
+  if (!bd) return "";
+  const parts = [];
+  if (bd.full > 0) parts.push(`${bd.full} বস্তা (${bd.size}kg)`);
+  if (bd.remainder > 0) parts.push(`${bd.remainder}kg খোলা বস্তায়`);
+  if (!parts.length) return "";
+  return parts.join(" + ");
 }
 
 /* ---------- MODAL ---------- */
@@ -426,27 +483,43 @@ function addProduct() {
     <label class="block"><span class="text-sm font-medium">Brand</span>
       <select name="brandId" required class="mt-1 w-full border rounded-lg px-3 py-2">${brandOptions()}</select>
     </label>
+    <label class="block"><span class="text-sm font-medium">বস্তার সাইজ (kg)</span>
+      <input name="sackSize" list="sackSizeList" type="number" min="0" step="0.01" value="25" class="mt-1 w-full border rounded-lg px-3 py-2" />
+      <datalist id="sackSizeList">
+        <option value="1"></option><option value="5"></option><option value="10"></option>
+        <option value="20"></option><option value="25"></option><option value="50"></option>
+      </datalist>
+    </label>
     <div class="grid grid-cols-2 gap-3">
-      <label class="block"><span class="text-sm font-medium">Initial Stock (kg)</span>
-        <input name="stock" type="number" min="0" step="0.01" value="0" required class="mt-1 w-full border rounded-lg px-3 py-2" />
+      <label class="block"><span class="text-sm font-medium">কয়টি বস্তা আছে</span>
+        <input name="sackCount" type="number" min="0" step="1" value="0" class="mt-1 w-full border rounded-lg px-3 py-2" />
       </label>
+      <label class="block"><span class="text-sm font-medium">অতিরিক্ত/খোলা বস্তায় (kg)</span>
+        <input name="extraKg" type="number" min="0" step="0.01" value="0" class="mt-1 w-full border rounded-lg px-3 py-2" />
+      </label>
+    </div>
+    <div class="text-sm text-slate-600 bg-slate-50 rounded-lg px-3 py-2">মোট Initial Stock: <span id="computedStock" class="font-semibold">0 kg</span></div>
+    <div class="grid grid-cols-2 gap-3">
       <label class="block"><span class="text-sm font-medium">ক্রয়মূল্য/kg</span>
         <input name="buyPrice" type="number" min="0" step="0.01" value="0" required class="mt-1 w-full border rounded-lg px-3 py-2" />
       </label>
+      <label class="block"><span class="text-sm font-medium">বিক্রয়মূল্য/kg</span>
+        <input name="sellPrice" type="number" min="0" step="0.01" value="0" required class="mt-1 w-full border rounded-lg px-3 py-2" />
+      </label>
     </div>
-    <label class="block"><span class="text-sm font-medium">বিক্রয়মূল্য/kg</span>
-      <input name="sellPrice" type="number" min="0" step="0.01" value="0" required class="mt-1 w-full border rounded-lg px-3 py-2" />
-    </label>
     <button type="submit" class="w-full bg-emerald-600 text-white rounded-lg py-2.5">Save Product</button>
   `, fd => {
     const name = String(fd.get("name") || "").trim();
     const brandId = fd.get("brandId");
-    const stock = Number(fd.get("stock") || 0);
+    const sackSize = Number(fd.get("sackSize") || 0);
+    const sackCount = Number(fd.get("sackCount") || 0);
+    const extraKg = Number(fd.get("extraKg") || 0);
+    const stock = Number((sackCount * sackSize + extraKg).toFixed(2));
     const buyPrice = Number(fd.get("buyPrice") || 0);
     const sellPrice = Number(fd.get("sellPrice") || 0);
     if (!name || !brandId) return alert("Product name ও Brand দিন।");
     const productId = crypto.randomUUID();
-    db.products.push({id: productId, name, brandId, stock, buyPrice, sellPrice});
+    db.products.push({id: productId, name, brandId, stock, buyPrice, sellPrice, sackSize});
     // Initial stock মানেই Brand থেকে কেনা — তাই এটাও একটা Purchase হিসেবে জমা হবে,
     // আর শুরুতে এই টাকা Supplier Due-তে দেখাবে (paid: 0, due: পুরো টাকা)।
     if (stock > 0) {
@@ -459,6 +532,16 @@ function addProduct() {
     save();
     closeModal();
   });
+
+  const sackSizeEl = document.querySelector('#modalForm [name="sackSize"]');
+  const sackCountEl = document.querySelector('#modalForm [name="sackCount"]');
+  const extraKgEl = document.querySelector('#modalForm [name="extraKg"]');
+  const computedEl = document.getElementById("computedStock");
+  function recompute() {
+    const total = (Number(sackCountEl.value) || 0) * (Number(sackSizeEl.value) || 0) + (Number(extraKgEl.value) || 0);
+    computedEl.textContent = total.toLocaleString("en-BD", {maximumFractionDigits: 2}) + " kg";
+  }
+  [sackSizeEl, sackCountEl, extraKgEl].forEach(el => el.addEventListener("input", recompute));
 }
 
 function editProduct(id) {
@@ -470,6 +553,13 @@ function editProduct(id) {
     </label>
     <label class="block"><span class="text-sm font-medium">Brand</span>
       <select name="brandId" class="mt-1 w-full border rounded-lg px-3 py-2">${brandOptions(p.brandId)}</select>
+    </label>
+    <label class="block"><span class="text-sm font-medium">বস্তার সাইজ (kg)</span>
+      <input name="sackSize" list="sackSizeList" type="number" min="0" step="0.01" value="${p.sackSize || 25}" class="mt-1 w-full border rounded-lg px-3 py-2" />
+      <datalist id="sackSizeList">
+        <option value="1"></option><option value="5"></option><option value="10"></option>
+        <option value="20"></option><option value="25"></option><option value="50"></option>
+      </datalist>
     </label>
     <div class="grid grid-cols-2 gap-3">
       <label class="block"><span class="text-sm font-medium">Stock (kg)</span>
@@ -486,6 +576,7 @@ function editProduct(id) {
   `, fd => {
     p.name = String(fd.get("name")).trim();
     p.brandId = fd.get("brandId");
+    p.sackSize = Number(fd.get("sackSize") || 0);
     p.stock = Number(fd.get("stock"));
     p.buyPrice = Number(fd.get("buyPrice"));
     p.sellPrice = Number(fd.get("sellPrice"));
@@ -528,21 +619,32 @@ function addPurchase() {
       <select name="brandId" required class="mt-1 w-full border rounded-lg px-3 py-2">${brandOptions()}</select>
     </label>
     <label class="block"><span class="text-sm font-medium">Product</span>
-      <select name="productId" required class="mt-1 w-full border rounded-lg px-3 py-2">
+      <select id="purchaseProductSelect" name="productId" required class="mt-1 w-full border rounded-lg px-3 py-2">
         ${db.products.map(p => {
           const b = db.brands.find(x => x.id === p.brandId);
           return `<option value="${p.id}">${escapeHtml(p.name)} — ${escapeHtml(b?.name || "")}</option>`;
         }).join("")}
       </select>
     </label>
+    <label class="block"><span class="text-sm font-medium">বস্তার সাইজ (kg)</span>
+      <input id="purchaseSackSize" name="sackSize" list="sackSizeList" type="number" min="0" step="0.01" value="25" class="mt-1 w-full border rounded-lg px-3 py-2" />
+      <datalist id="sackSizeList">
+        <option value="1"></option><option value="5"></option><option value="10"></option>
+        <option value="20"></option><option value="25"></option><option value="50"></option>
+      </datalist>
+    </label>
     <div class="grid grid-cols-2 gap-3">
-      <label class="block"><span class="text-sm font-medium">Purchase Qty (kg)</span>
-        <input name="qty" type="number" min="0.01" step="0.01" required class="mt-1 w-full border rounded-lg px-3 py-2" />
+      <label class="block"><span class="text-sm font-medium">কয়টি বস্তা</span>
+        <input id="purchaseSackCount" name="sackCount" type="number" min="0" step="1" value="0" class="mt-1 w-full border rounded-lg px-3 py-2" />
       </label>
-      <label class="block"><span class="text-sm font-medium">ক্রয়মূল্য / kg</span>
-        <input name="buyPrice" type="number" min="0" step="0.01" required class="mt-1 w-full border rounded-lg px-3 py-2" />
+      <label class="block"><span class="text-sm font-medium">অতিরিক্ত/খোলা (kg)</span>
+        <input id="purchaseExtraKg" name="extraKg" type="number" min="0" step="0.01" value="0" class="mt-1 w-full border rounded-lg px-3 py-2" />
       </label>
     </div>
+    <div class="text-sm text-slate-600 bg-slate-50 rounded-lg px-3 py-2">মোট Purchase Qty: <span id="purchaseComputedQty" class="font-semibold">0 kg</span></div>
+    <label class="block"><span class="text-sm font-medium">ক্রয়মূল্য / kg</span>
+      <input name="buyPrice" type="number" min="0" step="0.01" required class="mt-1 w-full border rounded-lg px-3 py-2" />
+    </label>
     <div class="grid grid-cols-2 gap-3">
       <label class="block"><span class="text-sm font-medium">এখন পরিশোধ</span>
         <input name="paid" type="number" min="0" step="0.01" value="0" required class="mt-1 w-full border rounded-lg px-3 py-2" />
@@ -555,7 +657,10 @@ function addPurchase() {
   `, fd => {
     const brandId = fd.get("brandId");
     const productId = fd.get("productId");
-    const qty = Number(fd.get("qty"));
+    const sackSize = Number(fd.get("sackSize") || 0);
+    const sackCount = Number(fd.get("sackCount") || 0);
+    const extraKg = Number(fd.get("extraKg") || 0);
+    const qty = Number((sackCount * sackSize + extraKg).toFixed(2));
     const buyPrice = Number(fd.get("buyPrice"));
     const total = qty * buyPrice;
     const paid = Math.min(Math.max(Number(fd.get("paid")), 0), total);
@@ -563,21 +668,36 @@ function addPurchase() {
     const p = db.products.find(x => x.id === productId);
     if (!p) return alert("Product পাওয়া যায়নি।");
     if (p.brandId !== brandId) return alert("Product ও Brand মিলছে না।");
+    if (qty <= 0) return alert("Purchase quantity 0 এর বেশি হতে হবে — বস্তা সংখ্যা বা অতিরিক্ত kg দিন।");
     p.stock = Number((p.stock + qty).toFixed(2));
     p.buyPrice = buyPrice;
+    p.sackSize = sackSize || p.sackSize;
     db.purchases.unshift({id: crypto.randomUUID(), brandId, productId, productName: p.name, qty, buyPrice, total, paid, due, date: new Date().toISOString()});
     save(); closeModal();
   });
 
-  const qty = document.querySelector('#modalForm [name="qty"]');
+  const productSelect = document.getElementById("purchaseProductSelect");
+  const sackSizeEl = document.getElementById("purchaseSackSize");
+  const sackCountEl = document.getElementById("purchaseSackCount");
+  const extraKgEl = document.getElementById("purchaseExtraKg");
+  const computedQtyEl = document.getElementById("purchaseComputedQty");
   const price = document.querySelector('#modalForm [name="buyPrice"]');
   const paid = document.querySelector('#modalForm [name="paid"]');
   const due = document.querySelector('#modalForm [name="due"]');
   function calc() {
-    const total = Number(qty.value || 0) * Number(price.value || 0);
+    const qty = (Number(sackCountEl.value) || 0) * (Number(sackSizeEl.value) || 0) + (Number(extraKgEl.value) || 0);
+    computedQtyEl.textContent = qty.toLocaleString("en-BD", {maximumFractionDigits: 2}) + " kg";
+    const total = qty * Number(price.value || 0);
     due.value = Math.max(0, total - Number(paid.value || 0)).toFixed(2);
   }
-  [qty, price, paid].forEach(x => x.addEventListener("input", calc));
+  function prefillFromProduct() {
+    const p = db.products.find(x => x.id === productSelect.value);
+    if (p && p.sackSize) sackSizeEl.value = p.sackSize;
+    calc();
+  }
+  productSelect.addEventListener("change", prefillFromProduct);
+  [sackSizeEl, sackCountEl, extraKgEl, price, paid].forEach(el => el.addEventListener("input", calc));
+  prefillFromProduct();
 }
 
 function paySupplier() {
@@ -795,6 +915,58 @@ function quickSell(id) {
   }, 0);
 }
 
+/* ---------- SALE RETURN ---------- */
+// অনেক ক্রেতা চাল ব্যবহার করে বাকিটা ফেরত দেয় — তাই বস্তা হিসেবে না গিয়ে
+// সবসময় kg দিয়েই return হিসাব হবে: sale-এর qty/total কমবে, সেই টাকা customer-এর due
+// থেকে বাদ যাবে, আর ফেরত-আসা পরিমাণ Inventory-তে আবার যোগ হয়ে যাবে।
+
+function returnSale(saleId) {
+  const s = db.sales.find(x => x.id === saleId);
+  if (!s) return;
+  if (Number(s.qty) <= 0) return alert("এই Sale-এর পুরোটাই ইতিমধ্যে return হয়ে গেছে।");
+  openModal(`Return — ${escapeHtml(s.productName)}`, `
+    <p class="text-sm text-slate-600">Customer: <span class="font-medium">${escapeHtml(s.customerName || "—")}</span><br/>
+      বর্তমানে বিক্রিত আছে: <span class="font-medium">${s.qty} kg</span> (@ ৳${money(s.sellPrice)}/kg)</p>
+    <label class="block"><span class="text-sm font-medium">Return পরিমাণ (kg)</span>
+      <input name="qty" type="number" min="0.01" max="${s.qty}" step="0.01" required class="mt-1 w-full border rounded-lg px-3 py-2" placeholder="যেমন: 20" />
+    </label>
+    <p class="text-xs text-slate-400">সঠিক kg দিন — বস্তা পূর্ণ ছিল কিনা তা নিয়ে ভাবতে হবে না, ব্যবহারের পর যা অবশিষ্ট আছে সেটাই লিখুন।</p>
+    <button type="submit" class="w-full bg-orange-600 text-white rounded-lg py-2.5">Return Confirm করুন</button>
+  `, fd => {
+    const r = Number(fd.get("qty"));
+    if (!r || r <= 0 || r > Number(s.qty) + 1e-6) {
+      return alert(`সঠিক পরিমাণ দিন (সর্বোচ্চ ${s.qty} kg)।`);
+    }
+    processReturn(s.id, r);
+    closeModal();
+  });
+}
+
+function processReturn(saleId, returnQty) {
+  const s = db.sales.find(x => x.id === saleId);
+  if (!s) return;
+  const p = db.products.find(x => x.id === s.productId);
+  const c = db.customers.find(x => x.id === s.customerId);
+  const value = Number((returnQty * s.sellPrice).toFixed(2));
+
+  const oldDue = Number(s.due || 0);
+  s.qty = Number((Number(s.qty) - returnQty).toFixed(2));
+  s.total = Number((Number(s.total) - value).toFixed(2));
+  s.due = Number((s.total - Number(s.paid || 0)).toFixed(2)); // paid অপরিবর্তিত থাকে; বেশি পরিশোধ থাকলে negative (advance) হতে পারে
+  const dueDelta = s.due - oldDue;
+
+  if (c) c.due = Number((Number(c.due || 0) + dueDelta).toFixed(2));
+  if (p) p.stock = Number((Number(p.stock) + returnQty).toFixed(2));
+
+  db.returns.unshift({
+    id: crypto.randomUUID(), saleId, productId: s.productId, productName: s.productName,
+    customerId: s.customerId, customerName: s.customerName, qty: returnQty, value,
+    date: new Date().toISOString(),
+  });
+
+  save();
+}
+
 /* ---------- RENDER ---------- */
 
 function renderManagement() {
@@ -807,15 +979,34 @@ function renderManagement() {
       </div>
     </div>`).join("") : `<div class="text-slate-400">কোনো Brand নেই।</div>`;
 
+  document.getElementById("productManagementCards").innerHTML = db.products.length ? db.products.map(p => {
+    const b = db.brands.find(x => x.id === p.brandId);
+    const bagLabel = bagBreakdownLabel(p.stock, p.sackSize);
+    return `<div class="p-3 flex items-start justify-between gap-3">
+      <div class="min-w-0">
+        <div class="font-semibold truncate">${escapeHtml(p.name)}</div>
+        <div class="text-xs text-slate-500">${escapeHtml(b?.name || "—")}</div>
+        <div class="text-xs text-slate-600 mt-1">Stock: <span class="font-semibold">${p.stock} kg</span></div>
+        ${bagLabel ? `<div class="text-xs text-slate-500">${bagLabel}</div>` : ""}
+        <div class="text-xs text-slate-500">ক্রয় ৳${money(p.buyPrice)} · বিক্রয় ৳${money(p.sellPrice)} /kg</div>
+      </div>
+      <div class="flex flex-col gap-1.5 shrink-0">
+        <button type="button" onclick="editProduct('${p.id}')" class="px-3 py-1.5 rounded-lg bg-blue-50 border border-blue-200 text-blue-700 text-xs font-semibold hover:bg-blue-100">Edit</button>
+        <button type="button" onclick="deleteProduct('${p.id}')" class="px-3 py-1.5 rounded-lg bg-red-50 border border-red-200 text-red-700 text-xs font-semibold hover:bg-red-100">Delete</button>
+      </div>
+    </div>`;
+  }).join("") : `<div class="p-6 text-center text-slate-400">কোনো Product নেই।</div>`;
+
   document.getElementById("productManagementBody").innerHTML = db.products.length ? db.products.map(p => {
     const b = db.brands.find(x => x.id === p.brandId);
+    const bagLabel = bagBreakdownLabel(p.stock, p.sackSize);
     return `<tr class="border-t">
-      <td class="p-2 sm:p-3 font-medium">${escapeHtml(p.name)}</td>
-      <td class="p-2 sm:p-3">${escapeHtml(b?.name || "—")}</td>
-      <td class="p-2 sm:p-3 text-right">${p.stock} kg</td>
-      <td class="p-2 sm:p-3 text-right">৳ ${money(p.buyPrice)}</td>
-      <td class="p-2 sm:p-3 text-right">৳ ${money(p.sellPrice)}</td>
-      <td class="p-2 sm:p-3 text-center whitespace-nowrap">
+      <td class="p-3 font-medium">${escapeHtml(p.name)}</td>
+      <td class="p-3">${escapeHtml(b?.name || "—")}</td>
+      <td class="p-3 text-right">${p.stock} kg${bagLabel ? `<div class="text-xs text-slate-400 font-normal">${bagLabel}</div>` : ""}</td>
+      <td class="p-3 text-right">৳ ${money(p.buyPrice)}</td>
+      <td class="p-3 text-right">৳ ${money(p.sellPrice)}</td>
+      <td class="p-3 text-center whitespace-nowrap">
         <button type="button" onclick="editProduct('${p.id}')" class="px-3 py-1.5 rounded-lg bg-blue-50 border border-blue-200 text-blue-700 text-xs font-semibold hover:bg-blue-100 mr-1">Edit</button>
         <button type="button" onclick="deleteProduct('${p.id}')" class="px-3 py-1.5 rounded-lg bg-red-50 border border-red-200 text-red-700 text-xs font-semibold hover:bg-red-100">Delete</button>
       </td>
@@ -835,8 +1026,8 @@ function renderCustomers() {
       </div>
       <div class="flex flex-col sm:items-end gap-2">
         <div class="sm:text-right">
-          <div class="font-bold ${Number(c.due || 0) > 0 ? 'text-red-600' : 'text-emerald-600'}">
-            ${Number(c.due || 0) > 0 ? 'Due: ৳ ' + money(c.due) : 'No Due'}
+          <div class="font-bold ${Number(c.due || 0) > 0 ? 'text-red-600' : Number(c.due || 0) < 0 ? 'text-blue-600' : 'text-emerald-600'}">
+            ${Number(c.due || 0) > 0 ? 'Due: ৳ ' + money(c.due) : Number(c.due || 0) < 0 ? 'Advance: ৳ ' + money(Math.abs(c.due)) : 'No Due'}
           </div>
           ${Number(c.due || 0) > 0 ? `<a class="text-sm text-blue-600 hover:underline" href="sms:${escapeHtml(c.phone)}?body=${encodeURIComponent("ভাই, আপনার বকেয়া ৳ " + money(c.due) + "। অনুগ্রহ করে পরিশোধ করবেন।")}">SMS Reminder</a>` : ''}
         </div>
@@ -872,12 +1063,32 @@ function render() {
     const b = db.brands.find(x => x.id === p.brandId);
     return (p.name + " " + (b?.name || "")).toLowerCase().includes(q);
   });
+
+  document.getElementById("inventoryCards").innerHTML = products.length ? products.map(p => {
+    const b = db.brands.find(x => x.id === p.brandId);
+    const low = p.stock < 500;
+    const bagLabel = bagBreakdownLabel(p.stock, p.sackSize);
+    return `<div class="p-3 flex items-center justify-between gap-3">
+      <div class="min-w-0">
+        <div class="font-semibold truncate">${escapeHtml(p.name)}</div>
+        <div class="text-xs text-slate-500">${escapeHtml(b?.name || "—")}</div>
+        <div class="text-xs mt-1">
+          <span class="font-semibold ${low ? 'text-red-600' : ''}">${p.stock.toLocaleString("en-BD")} kg</span>
+          <span class="text-slate-400"> · ক্রয় ৳${money(p.buyPrice)} · বিক্রয় ৳${money(p.sellPrice)}</span>
+        </div>
+        ${bagLabel ? `<div class="text-xs text-slate-400">${bagLabel}</div>` : ""}
+      </div>
+      <button type="button" onclick="quickSell('${p.id}')" class="shrink-0 px-3 py-1.5 rounded-lg bg-blue-50 text-blue-700 text-xs font-semibold hover:bg-blue-100">Sell</button>
+    </div>`;
+  }).join("") : `<div class="p-6 text-center text-slate-400">কোনো product পাওয়া যায়নি। + Product দিয়ে যোগ করুন।</div>`;
+
   document.getElementById("inventoryBody").innerHTML = products.length ? products.map(p => {
     const b = db.brands.find(x => x.id === p.brandId);
+    const bagLabel = bagBreakdownLabel(p.stock, p.sackSize);
     return `<tr class="border-t">
       <td class="p-2 sm:p-3 font-medium">${escapeHtml(p.name)}</td>
       <td class="p-2 sm:p-3">${escapeHtml(b?.name || "—")}</td>
-      <td class="p-2 sm:p-3 text-right font-semibold ${p.stock < 500 ? 'text-red-600' : ''}">${p.stock.toLocaleString("en-BD")} kg</td>
+      <td class="p-2 sm:p-3 text-right font-semibold ${p.stock < 500 ? 'text-red-600' : ''}">${p.stock.toLocaleString("en-BD")} kg${bagLabel ? `<div class="text-xs text-slate-400 font-normal">${bagLabel}</div>` : ""}</td>
       <td class="p-2 sm:p-3 text-right">৳ ${money(p.buyPrice)}</td>
       <td class="p-2 sm:p-3 text-right">৳ ${money(p.sellPrice)}</td>
       <td class="p-2 sm:p-3 text-center"><button type="button" onclick="quickSell('${p.id}')" class="px-3 py-1.5 rounded-lg bg-blue-50 text-blue-700 text-xs font-semibold hover:bg-blue-100">Sell</button></td>
@@ -885,6 +1096,20 @@ function render() {
   }).join("") : `<tr><td colspan="6" class="p-8 text-center text-slate-400">কোনো product পাওয়া যায়নি। + Product দিয়ে যোগ করুন।</td></tr>`;
 
   renderCustomers();
+
+  document.getElementById("salesCards").innerHTML = db.sales.length ? db.sales.slice(0, 20).map(s => `
+    <div class="p-3 space-y-1">
+      <div class="flex items-center justify-between text-xs text-slate-400">
+        <span>${new Date(s.date).toLocaleString("en-BD")}</span>
+        ${Number(s.due || 0) > 0 ? `<span class="text-red-600 font-semibold">Due ৳${money(s.due)}</span>` : Number(s.due || 0) < 0 ? `<span class="text-blue-600 font-semibold">Advance ৳${money(Math.abs(s.due))}</span>` : `<span class="text-emerald-600 font-semibold">Paid</span>`}
+      </div>
+      <div class="font-semibold">${escapeHtml(s.productName)} — ${s.qty} kg</div>
+      <div class="text-sm text-slate-600">${escapeHtml(s.customerName || "—")}${s.customerPhone ? " · " + escapeHtml(s.customerPhone) : ""}</div>
+      <div class="text-sm flex items-center justify-between">
+        <span>Total: <span class="font-semibold">৳ ${money(s.total)}</span> <span class="text-slate-400">(@ ৳${money(s.sellPrice)}/kg)</span></span>
+        ${Number(s.qty) > 0 ? `<button type="button" onclick="returnSale('${s.id}')" class="px-3 py-1 rounded-lg bg-orange-50 border border-orange-200 text-orange-700 text-xs font-semibold hover:bg-orange-100">Return</button>` : ''}
+      </div>
+    </div>`).join("") : `<div class="p-6 text-center text-slate-400">এখনো কোনো sale নেই।</div>`;
 
   document.getElementById("salesBody").innerHTML = db.sales.length ? db.sales.slice(0, 20).map(s => `
     <tr class="border-t">
@@ -894,8 +1119,26 @@ function render() {
       <td class="p-2 sm:p-3 text-right">${s.qty} kg</td>
       <td class="p-2 sm:p-3 text-right">৳ ${money(s.sellPrice)}</td>
       <td class="p-2 sm:p-3 text-right font-semibold">৳ ${money(s.total)}</td>
-      <td class="p-2 sm:p-3 text-right ${Number(s.due || 0) > 0 ? 'text-red-600 font-semibold' : ''}">৳ ${money(s.due || 0)}</td>
-    </tr>`).join("") : `<tr><td colspan="7" class="p-8 text-center text-slate-400">এখনো কোনো sale নেই।</td></tr>`;
+      <td class="p-2 sm:p-3 text-right ${Number(s.due || 0) > 0 ? 'text-red-600 font-semibold' : Number(s.due || 0) < 0 ? 'text-blue-600 font-semibold' : ''}">৳ ${money(s.due || 0)}</td>
+      <td class="p-2 sm:p-3 text-center">${Number(s.qty) > 0 ? `<button type="button" onclick="returnSale('${s.id}')" class="px-3 py-1.5 rounded-lg bg-orange-50 border border-orange-200 text-orange-700 text-xs font-semibold hover:bg-orange-100">Return</button>` : '—'}</td>
+    </tr>`).join("") : `<tr><td colspan="8" class="p-8 text-center text-slate-400">এখনো কোনো sale নেই।</td></tr>`;
+
+  document.getElementById("returnsCards").innerHTML = db.returns.length ? db.returns.slice(0, 20).map(r => `
+    <div class="p-3 space-y-1">
+      <div class="text-xs text-slate-400">${new Date(r.date).toLocaleString("en-BD")}</div>
+      <div class="font-semibold">${escapeHtml(r.productName)} — ${r.qty} kg</div>
+      <div class="text-sm text-slate-600">${escapeHtml(r.customerName || "—")}</div>
+      <div class="text-sm">মূল্য ফেরত: <span class="font-semibold text-orange-600">৳ ${money(r.value)}</span></div>
+    </div>`).join("") : `<div class="p-6 text-center text-slate-400">এখনো কোনো return হয়নি।</div>`;
+
+  document.getElementById("returnsBody").innerHTML = db.returns.length ? db.returns.slice(0, 20).map(r => `
+    <tr class="border-t">
+      <td class="p-2 sm:p-3">${new Date(r.date).toLocaleString("en-BD")}</td>
+      <td class="p-2 sm:p-3">${escapeHtml(r.customerName || "—")}</td>
+      <td class="p-2 sm:p-3">${escapeHtml(r.productName)}</td>
+      <td class="p-2 sm:p-3 text-right">${r.qty} kg</td>
+      <td class="p-2 sm:p-3 text-right font-semibold text-orange-600">৳ ${money(r.value)}</td>
+    </tr>`).join("") : `<tr><td colspan="5" class="p-8 text-center text-slate-400">এখনো কোনো return হয়নি।</td></tr>`;
 }
 
 /* ---------- BACKUP / RESTORE ---------- */
