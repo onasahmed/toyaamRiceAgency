@@ -64,6 +64,7 @@
             <tbody id="productManagementBody"></tbody>
           </table>
         </div>
+        <div id="productManagementPagination"></div>
       </section>
 
       <section class="bg-white rounded-xl shadow-sm overflow-hidden">
@@ -92,6 +93,7 @@
             <tbody id="inventoryBody"></tbody>
           </table>
         </div>
+        <div id="inventoryPagination"></div>
       </section>
 
       <section class="bg-white rounded-xl shadow-sm overflow-hidden">
@@ -969,6 +971,31 @@ function processReturn(saleId, returnQty) {
 
 /* ---------- RENDER ---------- */
 
+const PAGE_SIZE = 6;
+let productMgmtPage = 1;
+let inventoryPage = 1;
+
+function paginate(array, page, pageSize) {
+  const totalPages = Math.max(1, Math.ceil(array.length / pageSize));
+  const clampedPage = Math.min(Math.max(1, page), totalPages);
+  const start = (clampedPage - 1) * pageSize;
+  return { items: array.slice(start, start + pageSize), page: clampedPage, totalPages };
+}
+
+function renderPaginationControls(containerId, page, totalPages, onPageChange) {
+  const el = document.getElementById(containerId);
+  if (!el) return;
+  if (totalPages <= 1) { el.innerHTML = ""; return; }
+  let buttons = "";
+  for (let i = 1; i <= totalPages; i++) {
+    buttons += `<button type="button" data-page="${i}" class="min-w-[2.25rem] px-2.5 py-1.5 rounded-lg text-xs font-semibold ${i === page ? 'bg-slate-800 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}">${i}</button>`;
+  }
+  el.innerHTML = `<div class="flex flex-wrap gap-1.5 justify-center items-center p-3 border-t">${buttons}</div>`;
+  el.querySelectorAll("button[data-page]").forEach(btn => {
+    btn.onclick = () => onPageChange(Number(btn.dataset.page));
+  });
+}
+
 function renderManagement() {
   document.getElementById("brandList").innerHTML = db.brands.length ? db.brands.map(b => `
     <div class="border rounded-xl p-4 bg-slate-50 flex items-center justify-between gap-3">
@@ -979,10 +1006,13 @@ function renderManagement() {
       </div>
     </div>`).join("") : `<div class="text-slate-400">কোনো Brand নেই।</div>`;
 
-  document.getElementById("productManagementCards").innerHTML = db.products.length ? db.products.map(p => {
+  const pm = paginate(db.products, productMgmtPage, PAGE_SIZE);
+  productMgmtPage = pm.page;
+
+  document.getElementById("productManagementCards").innerHTML = pm.items.length ? pm.items.map(p => {
     const b = db.brands.find(x => x.id === p.brandId);
     const bagLabel = bagBreakdownLabel(p.stock, p.sackSize);
-    return `<div class="p-3 flex items-start justify-between gap-3">
+    return `<div class="p-3 flex items-start justify-between gap-3 border-l-4 border-l-emerald-500 bg-emerald-50/30">
       <div class="min-w-0">
         <div class="font-semibold truncate">${escapeHtml(p.name)}</div>
         <div class="text-xs text-slate-500">${escapeHtml(b?.name || "—")}</div>
@@ -997,7 +1027,7 @@ function renderManagement() {
     </div>`;
   }).join("") : `<div class="p-6 text-center text-slate-400">কোনো Product নেই।</div>`;
 
-  document.getElementById("productManagementBody").innerHTML = db.products.length ? db.products.map(p => {
+  document.getElementById("productManagementBody").innerHTML = pm.items.length ? pm.items.map(p => {
     const b = db.brands.find(x => x.id === p.brandId);
     const bagLabel = bagBreakdownLabel(p.stock, p.sackSize);
     return `<tr class="border-t">
@@ -1012,6 +1042,11 @@ function renderManagement() {
       </td>
     </tr>`;
   }).join("") : `<tr><td colspan="6" class="p-6 text-center text-slate-400">কোনো Product নেই।</td></tr>`;
+
+  renderPaginationControls("productManagementPagination", pm.page, pm.totalPages, (newPage) => {
+    productMgmtPage = newPage;
+    renderManagement();
+  });
 }
 
 function renderCustomers() {
@@ -1019,7 +1054,7 @@ function renderCustomers() {
   const filter = document.getElementById("customerDueFilter")?.value || "all";
   const rows = db.customers.filter(c => filter === "all" || (filter === "due" && Number(c.due || 0) > 0) || (filter === "paid" && Number(c.due || 0) <= 0));
   list.innerHTML = rows.length ? rows.map(c => `
-    <div class="border rounded-lg p-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+    <div class="border border-l-4 border-l-teal-500 bg-teal-50/30 rounded-lg p-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
       <div>
         <div class="font-semibold">${escapeHtml(c.name)}</div>
         <div class="text-sm text-slate-500">${escapeHtml(c.phone)}</div>
@@ -1042,7 +1077,7 @@ function renderCustomers() {
   const supplier = document.getElementById("supplierDueList");
   const dues = getSupplierDues();
   supplier.innerHTML = dues.length ? dues.map(x => `
-    <div class="border rounded-lg p-3 flex items-center justify-between">
+    <div class="border border-l-4 border-l-violet-500 bg-violet-50/30 rounded-lg p-3 flex items-center justify-between">
       <div class="font-semibold">${escapeHtml(x.brandName)}</div>
       <div class="${x.due > 0 ? 'text-red-600' : 'text-emerald-600'} font-bold">${x.due > 0 ? '৳ ' + money(x.due) : 'Paid'}</div>
     </div>`).join("") : `<div class="text-center text-slate-400 py-6">কোনো supplier data নেই।</div>`;
@@ -1059,16 +1094,19 @@ function render() {
   renderManagement();
 
   const q = (document.getElementById("search").value || "").toLowerCase();
-  const products = db.products.filter(p => {
+  const filteredProducts = db.products.filter(p => {
     const b = db.brands.find(x => x.id === p.brandId);
     return (p.name + " " + (b?.name || "")).toLowerCase().includes(q);
   });
+  const inv = paginate(filteredProducts, inventoryPage, PAGE_SIZE);
+  inventoryPage = inv.page;
+  const products = inv.items;
 
   document.getElementById("inventoryCards").innerHTML = products.length ? products.map(p => {
     const b = db.brands.find(x => x.id === p.brandId);
     const low = p.stock < 500;
     const bagLabel = bagBreakdownLabel(p.stock, p.sackSize);
-    return `<div class="p-3 flex items-center justify-between gap-3">
+    return `<div class="p-3 flex items-center justify-between gap-3 border-l-4 border-l-blue-500 bg-blue-50/30">
       <div class="min-w-0">
         <div class="font-semibold truncate">${escapeHtml(p.name)}</div>
         <div class="text-xs text-slate-500">${escapeHtml(b?.name || "—")}</div>
@@ -1078,7 +1116,7 @@ function render() {
         </div>
         ${bagLabel ? `<div class="text-xs text-slate-400">${bagLabel}</div>` : ""}
       </div>
-      <button type="button" onclick="quickSell('${p.id}')" class="shrink-0 px-3 py-1.5 rounded-lg bg-blue-50 text-blue-700 text-xs font-semibold hover:bg-blue-100">Sell</button>
+      <button type="button" onclick="quickSell('${p.id}')" class="shrink-0 px-3 py-1.5 rounded-lg bg-blue-100 text-blue-700 text-xs font-semibold hover:bg-blue-200">Sell</button>
     </div>`;
   }).join("") : `<div class="p-6 text-center text-slate-400">কোনো product পাওয়া যায়নি। + Product দিয়ে যোগ করুন।</div>`;
 
@@ -1095,10 +1133,15 @@ function render() {
     </tr>`;
   }).join("") : `<tr><td colspan="6" class="p-8 text-center text-slate-400">কোনো product পাওয়া যায়নি। + Product দিয়ে যোগ করুন।</td></tr>`;
 
+  renderPaginationControls("inventoryPagination", inv.page, inv.totalPages, (newPage) => {
+    inventoryPage = newPage;
+    render();
+  });
+
   renderCustomers();
 
   document.getElementById("salesCards").innerHTML = db.sales.length ? db.sales.slice(0, 20).map(s => `
-    <div class="p-3 space-y-1">
+    <div class="p-3 space-y-1 border-l-4 border-l-indigo-500 bg-indigo-50/30">
       <div class="flex items-center justify-between text-xs text-slate-400">
         <span>${new Date(s.date).toLocaleString("en-BD")}</span>
         ${Number(s.due || 0) > 0 ? `<span class="text-red-600 font-semibold">Due ৳${money(s.due)}</span>` : Number(s.due || 0) < 0 ? `<span class="text-blue-600 font-semibold">Advance ৳${money(Math.abs(s.due))}</span>` : `<span class="text-emerald-600 font-semibold">Paid</span>`}
@@ -1124,7 +1167,7 @@ function render() {
     </tr>`).join("") : `<tr><td colspan="8" class="p-8 text-center text-slate-400">এখনো কোনো sale নেই।</td></tr>`;
 
   document.getElementById("returnsCards").innerHTML = db.returns.length ? db.returns.slice(0, 20).map(r => `
-    <div class="p-3 space-y-1">
+    <div class="p-3 space-y-1 border-l-4 border-l-orange-500 bg-orange-50/30">
       <div class="text-xs text-slate-400">${new Date(r.date).toLocaleString("en-BD")}</div>
       <div class="font-semibold">${escapeHtml(r.productName)} — ${r.qty} kg</div>
       <div class="text-sm text-slate-600">${escapeHtml(r.customerName || "—")}</div>
@@ -1224,7 +1267,7 @@ document.getElementById("supplierDueBtn").onclick = paySupplier;
 document.getElementById("sellBtn").onclick = sellProduct;
 document.getElementById("addCustomerBtn").onclick = addCustomer;
 document.getElementById("customerPaymentBtn").onclick = () => payCustomerDue();
-document.getElementById("search").oninput = render;
+document.getElementById("search").oninput = () => { inventoryPage = 1; render(); };
 document.getElementById("customerDueFilter").onchange = renderCustomers;
 document.getElementById("footerBackupBtn").onclick = downloadBackup;
 document.getElementById("footerRestoreBtn").onclick = quickRestoreLastBackup;
