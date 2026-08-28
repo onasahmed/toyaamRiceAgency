@@ -44,27 +44,32 @@
             <h2 class="font-bold text-lg">Product Management</h2>
             <p class="text-sm text-slate-500">Product edit / delete করতে পারবেন</p>
           </div>
-          <button id="productSectionAdd" type="button" class="px-4 py-2 rounded-lg bg-emerald-600 text-white text-sm hover:bg-emerald-500 transition">+ Add Product</button>
+          <div class="flex gap-2">
+            <button id="productSectionAdd" type="button" class="px-4 py-2 rounded-lg bg-emerald-600 text-white text-sm hover:bg-emerald-500 transition">+ Add Product</button>
+            <button id="productMgmtToggle" type="button" class="px-3 py-2 rounded-lg bg-slate-100 text-slate-600 text-sm hover:bg-slate-200 transition">▼ দেখুন</button>
+          </div>
         </div>
-        <!-- Mobile: card list -->
-        <div id="productManagementCards" class="sm:hidden divide-y"></div>
-        <!-- Desktop/tablet: table -->
-        <div class="hidden sm:block overflow-x-auto">
-          <table class="w-full text-sm">
-            <thead class="bg-slate-50">
-              <tr>
-                <th class="text-left p-3">Product</th>
-                <th class="text-left p-3">Brand</th>
-                <th class="text-right p-3">Stock</th>
-                <th class="text-right p-3">Buy/kg</th>
-                <th class="text-right p-3">Sell/kg</th>
-                <th class="text-center p-3">Action</th>
-              </tr>
-            </thead>
-            <tbody id="productManagementBody"></tbody>
-          </table>
+        <div id="productMgmtContent" class="hidden">
+          <!-- Mobile: card list -->
+          <div id="productManagementCards" class="sm:hidden divide-y"></div>
+          <!-- Desktop/tablet: table -->
+          <div class="hidden sm:block overflow-x-auto">
+            <table class="w-full text-sm">
+              <thead class="bg-slate-50">
+                <tr>
+                  <th class="text-left p-3">Product</th>
+                  <th class="text-left p-3">Brand</th>
+                  <th class="text-right p-3">Stock</th>
+                  <th class="text-right p-3">Buy/kg</th>
+                  <th class="text-right p-3">Sell/kg</th>
+                  <th class="text-center p-3">Action</th>
+                </tr>
+              </thead>
+              <tbody id="productManagementBody"></tbody>
+            </table>
+          </div>
+          <div id="productManagementPagination"></div>
         </div>
-        <div id="productManagementPagination"></div>
       </section>
 
       <section class="bg-white rounded-xl shadow-sm overflow-hidden">
@@ -124,26 +129,31 @@
       </section>
 
       <section class="bg-white rounded-xl shadow-sm overflow-hidden">
-        <div class="p-4 border-b">
-          <h2 class="font-bold text-lg">Recent Returns</h2>
-          <p class="text-sm text-slate-500">বিক্রি হওয়া চাল থেকে ফেরত আসা পরিমাণ এখানে দেখাবে</p>
+        <div class="p-4 border-b flex items-center justify-between gap-3">
+          <div>
+            <h2 class="font-bold text-lg">Recent Returns</h2>
+            <p class="text-sm text-slate-500">বিক্রি হওয়া চাল থেকে ফেরত আসা পরিমাণ এখানে দেখাবে</p>
+          </div>
+          <button id="returnsToggle" type="button" class="px-3 py-2 rounded-lg bg-slate-100 text-slate-600 text-sm hover:bg-slate-200 transition shrink-0">▼ দেখুন</button>
         </div>
-        <!-- Mobile: card list -->
-        <div id="returnsCards" class="sm:hidden divide-y"></div>
-        <!-- Desktop/tablet: table -->
-        <div class="hidden sm:block overflow-x-auto">
-          <table class="w-full text-sm">
-            <thead class="bg-slate-50">
-              <tr>
-                <th class="text-left p-3">Date</th>
-                <th class="text-left p-3">Customer</th>
-                <th class="text-left p-3">Product</th>
-                <th class="text-right p-3">Qty (kg)</th>
-                <th class="text-right p-3">মূল্য ফেরত</th>
-              </tr>
-            </thead>
-            <tbody id="returnsBody"></tbody>
-          </table>
+        <div id="returnsContent" class="hidden">
+          <!-- Mobile: card list -->
+          <div id="returnsCards" class="sm:hidden divide-y"></div>
+          <!-- Desktop/tablet: table -->
+          <div class="hidden sm:block overflow-x-auto">
+            <table class="w-full text-sm">
+              <thead class="bg-slate-50">
+                <tr>
+                  <th class="text-left p-3">Date</th>
+                  <th class="text-left p-3">Customer</th>
+                  <th class="text-left p-3">Product</th>
+                  <th class="text-right p-3">Qty (kg)</th>
+                  <th class="text-right p-3">মূল্য ফেরত</th>
+                </tr>
+              </thead>
+              <tbody id="returnsBody"></tbody>
+            </table>
+          </div>
         </div>
       </section>
 
@@ -153,9 +163,14 @@
             <h2 class="font-bold text-lg">Brand Management</h2>
             <p class="text-sm text-slate-500">Brand edit / delete করতে পারবেন</p>
           </div>
-          <button id="brandSectionAdd" type="button" class="px-4 py-2 rounded-lg bg-slate-800 text-white text-sm hover:bg-slate-700 transition">+ Add Brand</button>
+          <div class="flex gap-2">
+            <button id="brandSectionAdd" type="button" class="px-4 py-2 rounded-lg bg-slate-800 text-white text-sm hover:bg-slate-700 transition">+ Add Brand</button>
+            <button id="brandMgmtToggle" type="button" class="px-3 py-2 rounded-lg bg-slate-100 text-slate-600 text-sm hover:bg-slate-200 transition">▼ দেখুন</button>
+          </div>
         </div>
-        <div id="brandList" class="p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3"></div>
+        <div id="brandMgmtContent" class="hidden">
+          <div id="brandList" class="p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3"></div>
+        </div>
       </section>
 
       <section class="grid grid-cols-1 xl:grid-cols-2 gap-5">
@@ -183,6 +198,7 @@
             </select>
           </div>
           <div class="p-4 space-y-2" id="customerList"></div>
+          <div id="customerPagination"></div>
         </div>
       </section>
     </main>
@@ -755,6 +771,36 @@ function payCustomerDue(preselectId = "") {
   });
 }
 
+// Return-এর কারণে কখনো customer বেশি টাকা দিয়ে ফেলেন (advance/credit) —
+// দোকানদার সেই টাকা হাতে-হাতে ফেরত দিলে এখানে সেটা নিশ্চিত/লগ করা হয়, যাতে
+// Advance-এর পরিমাণ কমে/মুছে যায় এবং হিসাব ঠিক থাকে।
+function refundCustomerAdvance(preselectId = "") {
+  const advances = db.customers.filter(x => Number(x.due || 0) < 0);
+  if (!advances.length) return alert("কোনো Customer-এর Advance/Credit নেই।");
+  openModal("Advance ফেরত দিন", `
+    <label class="block"><span class="text-sm font-medium">Customer</span>
+      <select name="customerId" required class="mt-1 w-full border rounded-lg px-3 py-2">
+        ${advances.map(x => `<option value="${x.id}" ${x.id === preselectId ? "selected" : ""}>${escapeHtml(x.name)} — ${escapeHtml(x.phone)} — Advance: ৳ ${money(Math.abs(x.due))}</option>`).join("")}
+      </select>
+    </label>
+    <label class="block"><span class="text-sm font-medium">যত টাকা হাতে ফেরত দিচ্ছেন</span>
+      <input name="amount" type="number" min="0.01" step="0.01" required class="mt-1 w-full border rounded-lg px-3 py-2" />
+    </label>
+    <p class="text-xs text-slate-400">এই টাকাটা আপনি customer-কে cash দিয়ে বুঝিয়ে দিয়েছেন — নিশ্চিত করলে তার Advance থেকে এটা কমে যাবে।</p>
+    <button type="submit" class="w-full bg-blue-600 text-white rounded-lg py-2.5">Advance ফেরত নিশ্চিত করুন</button>
+  `, fd => {
+    const customerId = fd.get("customerId");
+    const c = db.customers.find(x => x.id === customerId);
+    if (!c) return;
+    const advanceAvailable = Math.abs(Number(c.due || 0));
+    const amount = Number(fd.get("amount"));
+    if (amount <= 0 || amount > advanceAvailable) return alert("Advance-এর চেয়ে বেশি ফেরত দেওয়া যাবে না।");
+    c.due = Number((Number(c.due || 0) + amount).toFixed(2));
+    db.customerPayments.unshift({id: crypto.randomUUID(), customerId, customerName: c.name, amount: -amount, type: "advance_refund", date: new Date().toISOString()});
+    save(); closeModal();
+  });
+}
+
 /* ---------- CUSTOMER / SALES ---------- */
 
 function customerOptions() {
@@ -979,6 +1025,7 @@ function processReturn(saleId, returnQty) {
 const PAGE_SIZE = 6;
 let productMgmtPage = 1;
 let inventoryPage = 1;
+let customerPage = 1;
 
 function paginate(array, page, pageSize) {
   const totalPages = Math.max(1, Math.ceil(array.length / pageSize));
@@ -1058,7 +1105,9 @@ function renderCustomers() {
   const list = document.getElementById("customerList");
   const filter = document.getElementById("customerDueFilter")?.value || "all";
   const rows = db.customers.filter(c => filter === "all" || (filter === "due" && Number(c.due || 0) > 0) || (filter === "paid" && Number(c.due || 0) <= 0));
-  list.innerHTML = rows.length ? rows.map(c => `
+  const cp = paginate(rows, customerPage, PAGE_SIZE);
+  customerPage = cp.page;
+  list.innerHTML = cp.items.length ? cp.items.map(c => `
     <div class="border border-l-4 border-l-teal-500 bg-teal-50/30 rounded-lg p-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
       <div>
         <div class="font-semibold">${escapeHtml(c.name)}</div>
@@ -1073,11 +1122,17 @@ function renderCustomers() {
         </div>
         <div class="flex flex-wrap gap-2">
           ${Number(c.due || 0) > 0 ? `<button type="button" onclick="payCustomerDue('${c.id}')" class="px-3 py-1.5 rounded-lg bg-cyan-50 border border-cyan-200 text-cyan-700 text-xs font-semibold hover:bg-cyan-100">Payment নিন</button>` : ''}
+          ${Number(c.due || 0) < 0 ? `<button type="button" onclick="refundCustomerAdvance('${c.id}')" class="px-3 py-1.5 rounded-lg bg-blue-50 border border-blue-200 text-blue-700 text-xs font-semibold hover:bg-blue-100">Advance ফেরত দিন</button>` : ''}
           <button type="button" onclick="editCustomer('${c.id}')" class="px-3 py-1.5 rounded-lg bg-blue-50 border border-blue-200 text-blue-700 text-xs font-semibold hover:bg-blue-100">Edit</button>
           <button type="button" onclick="deleteCustomer('${c.id}')" class="px-3 py-1.5 rounded-lg bg-red-50 border border-red-200 text-red-700 text-xs font-semibold hover:bg-red-100">Delete</button>
         </div>
       </div>
     </div>`).join("") : `<div class="text-center text-slate-400 py-6">কোনো customer পাওয়া যায়নি।</div>`;
+
+  renderPaginationControls("customerPagination", cp.page, cp.totalPages, (newPage) => {
+    customerPage = newPage;
+    renderCustomers();
+  });
 
   const supplier = document.getElementById("supplierDueList");
   const dues = getSupplierDues();
@@ -1226,9 +1281,23 @@ document.getElementById("sellBtn").onclick = sellProduct;
 document.getElementById("addCustomerBtn").onclick = addCustomer;
 document.getElementById("customerPaymentBtn").onclick = () => payCustomerDue();
 document.getElementById("search").oninput = () => { inventoryPage = 1; render(); };
-document.getElementById("customerDueFilter").onchange = renderCustomers;
+document.getElementById("customerDueFilter").onchange = () => { customerPage = 1; renderCustomers(); };
 document.getElementById("footerResetBtn").onclick = resetAllData;
 document.getElementById("syncNowBtn").onclick = manualSync;
+
+// রোজকার কাজে যেগুলো বারবার দেখার দরকার নেই (Product/Brand Management, Recent Returns) —
+// সেগুলো ভাঁজ করা থাকবে, চাইলে বাটনে চেপে খুলে দেখা যাবে।
+function setupCollapsible(toggleBtnId, contentId) {
+  const btn = document.getElementById(toggleBtnId);
+  const content = document.getElementById(contentId);
+  btn.onclick = () => {
+    const nowHidden = content.classList.toggle("hidden");
+    btn.textContent = nowHidden ? "▼ দেখুন" : "▲ লুকান";
+  };
+}
+setupCollapsible("productMgmtToggle", "productMgmtContent");
+setupCollapsible("returnsToggle", "returnsContent");
+setupCollapsible("brandMgmtToggle", "brandMgmtContent");
 
 render(); // local cache দিয়ে সাথে সাথে দেখানো — internet slow থাকলেও UI blank থাকবে না
 initialCloudSync(); // তারপর MongoDB থেকে latest data টেনে আনবে
