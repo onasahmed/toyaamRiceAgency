@@ -31,10 +31,18 @@ Deploy হয়ে গেলে যে URL পাবে (যেমন `yourapp.
 Internet না থাকলেও app বন্ধ হবে না — local device-এ কাজ চালিয়ে যেতে পারবে, internet ফিরলে
 automatic আবার sync হয়ে যাবে (অথবা footer থেকে "এখনই Sync করুন" চাপা যাবে)।
 
+## Password Lock
+প্রথমবার site খুললে একটা Password সেট করতে বলবে — এটাই এখন থেকে site খোলার চাবি। Password
+MongoDB-এর `shop_auth` collection-এ প্লেইন টেক্সটে থাকে (ইচ্ছাকৃতভাবে, যাতে ভুলে গেলে Atlas-এ
+ঢুকে সরাসরি দেখে নেওয়া যায়)। শুধু UI-lock না — password ছাড়া API-তে সরাসরি হিট করলেও data পাওয়া
+যাবে না, যেহেতু backend (data.js) নিজেই password যাচাই করে। প্রতিটা device একবার Password দিলে
+সেটা মনে রাখে (আবার আবার চাইবে না), যদি না footer থেকে "🔒 Lock করুন" চেপে বের করে দাও।
+
 ## ফাইল গঠন
 ```
 public/index.html          → পুরো POS app (এটাই মূল site)
-netlify/functions/data.js  → MongoDB-এর সাথে কথা বলার backend function
+netlify/functions/data.js  → MongoDB-এর সাথে কথা বলার backend function (password-protected)
+netlify/functions/auth.js  → Password set/verify করার backend function
 package.json                → mongodb npm package-এর জন্য
 netlify.toml                → Netlify build config
 ```

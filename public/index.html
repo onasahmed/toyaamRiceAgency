@@ -11,6 +11,33 @@
   </style>
 </head>
 <body class="bg-slate-100 text-slate-800">
+
+  <!-- Lock Screen: password verify হওয়ার আগ পর্যন্ত এটাই দেখাবে -->
+  <div id="lockScreen" class="fixed inset-0 z-[200] bg-slate-100 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm border border-slate-200 p-6">
+      <h1 class="text-xl font-bold text-center">Toyaam Rice POS</h1>
+      <p id="lockSubtitle" class="text-sm text-slate-500 text-center mt-1 mb-5">যাচাই হচ্ছে...</p>
+      <form id="lockForm" class="space-y-3 hidden">
+        <div id="lockOldPasswordWrap" class="hidden">
+          <label class="block"><span class="text-sm font-medium">পুরনো Password</span>
+            <input id="lockOldPassword" type="password" class="mt-1 w-full border rounded-lg px-3 py-2" autocomplete="off" />
+          </label>
+        </div>
+        <label class="block">
+          <span id="lockPasswordLabel" class="text-sm font-medium">Password</span>
+          <input id="lockPassword" type="password" required class="mt-1 w-full border rounded-lg px-3 py-2" autocomplete="off" />
+        </label>
+        <div id="lockConfirmWrap" class="hidden">
+          <label class="block"><span class="text-sm font-medium">Password আবার লিখুন</span>
+            <input id="lockConfirmPassword" type="password" class="mt-1 w-full border rounded-lg px-3 py-2" autocomplete="off" />
+          </label>
+        </div>
+        <p id="lockError" class="text-sm text-red-600 hidden"></p>
+        <button type="submit" id="lockSubmitBtn" class="w-full bg-slate-800 text-white rounded-lg py-2.5 font-semibold hover:bg-slate-700">প্রবেশ করুন</button>
+      </form>
+    </div>
+  </div>
+
   <div class="min-h-screen">
     <header class="bg-white border-b sm:sticky sm:top-0 z-20">
       <div class="max-w-7xl mx-auto px-3 sm:px-4 py-3 sm:py-4 flex flex-col gap-3">
@@ -207,6 +234,8 @@
       <p id="syncStatus" class="text-slate-400">Sync হচ্ছে...</p>
       <div class="mt-2 flex flex-wrap justify-center gap-x-4 gap-y-1">
         <button id="syncNowBtn" type="button" class="underline hover:text-slate-600">এখনই Sync করুন</button>
+        <button id="footerChangePwBtn" type="button" class="underline hover:text-slate-600">Password পরিবর্তন করুন</button>
+        <button id="footerLockBtn" type="button" class="underline hover:text-slate-600">🔒 Lock করুন</button>
         <button id="footerResetBtn" type="button" class="underline text-red-400 hover:text-red-600">সব Data মুছুন (Reset)</button>
       </div>
     </footer>
@@ -226,7 +255,11 @@
 <script>
 const KEY = "rice_arat_pos_v1";
 const API_URL = "/.netlify/functions/data";
+const AUTH_URL = "/.netlify/functions/auth";
+const PASSWORD_KEY = "rice_arat_pos_v1_pw";
 const POLL_INTERVAL_MS = 20 * 1000; // অন্য device-এর changes এই সময় পরপর check হবে
+
+let sessionPassword = localStorage.getItem(PASSWORD_KEY) || "";
 
 const initial = {
   brands: [
@@ -281,7 +314,8 @@ function setSyncStatus(state, message) {
 
 async function fetchRemoteData() {
   try {
-    const res = await fetch(API_URL);
+    const res = await fetch(API_URL + "?password=" + encodeURIComponent(sessionPassword));
+    if (res.status === 401) return { __authError: true };
     if (!res.ok) throw new Error("fetch failed: " + res.status);
     return await res.json(); // null মানে সার্ভারে এখনো কোনো data নেই
   } catch (err) {
@@ -294,8 +328,12 @@ async function pushRemoteData(data) {
     const res = await fetch(API_URL, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(data),
+      body: JSON.stringify({ password: sessionPassword, data }),
     });
+    if (res.status === 401) {
+      setSyncStatus("error", "⚠️ Password ঠিক নেই — আবার Login করুন");
+      return false;
+    }
     if (!res.ok) throw new Error("push failed: " + res.status);
     setSyncStatus("ok", "✅ Sync হয়েছে — " + new Date().toLocaleTimeString("en-BD"));
     return true;
@@ -308,6 +346,10 @@ async function pushRemoteData(data) {
 async function initialCloudSync() {
   setSyncStatus("busy", "Sync হচ্ছে...");
   const remote = await fetchRemoteData();
+  if (remote && remote.__authError) {
+    lockApp("Password পরিবর্তন হয়ে গেছে — আবার Login করুন।");
+    return;
+  }
   if (remote && remote.__networkError) {
     setSyncStatus("error", "⚠️ Cloud-এ পৌঁছানো যায়নি — Internet চেক করুন (আপাতত local data দেখাচ্ছে)");
     return;
@@ -334,6 +376,10 @@ async function pollRemoteData() {
   syncing = true;
   const remote = await fetchRemoteData();
   syncing = false;
+  if (remote && remote.__authError) {
+    lockApp("Password পরিবর্তন হয়ে গেছে — আবার Login করুন।");
+    return;
+  }
   if (remote && remote.__networkError) {
     setSyncStatus("error", "⚠️ Cloud-এ পৌঁছানো যায়নি — Internet চেক করুন");
     return;
@@ -360,6 +406,185 @@ function save() {
   localStorage.setItem(KEY, JSON.stringify(db));
   render();
   pushRemoteData(db);
+}
+
+/* ---------- ACCESS PASSWORD (lock screen) ---------- */
+// Password MongoDB-এর আলাদা collection-এ (shop_auth) প্লেইন টেক্সটে রাখা হয় —
+// ভুলে গেলে Atlas-এ ঢুকে সরাসরি দেখে নেওয়া যাবে। এটা শুধু UI-level "screen" না;
+// data.js নিজেই password চেক করে, তাই password ছাড়া সরাসরি API হিট করলেও data পাওয়া যাবে না।
+
+async function checkHasPassword() {
+  try {
+    const res = await fetch(AUTH_URL);
+    if (!res.ok) throw new Error("failed");
+    const j = await res.json();
+    return !!j.hasPassword;
+  } catch {
+    return null; // network সমস্যা
+  }
+}
+
+async function verifyPassword(password) {
+  try {
+    const res = await fetch(AUTH_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "verify", password }),
+    });
+    if (!res.ok) return { ok: false, networkError: true };
+    return await res.json();
+  } catch {
+    return { ok: false, networkError: true };
+  }
+}
+
+async function setPassword(newPassword, oldPassword) {
+  try {
+    const res = await fetch(AUTH_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "set", password: newPassword, oldPassword }),
+    });
+    const j = await res.json();
+    if (!res.ok) return { ok: false, error: j.error || "কিছু একটা ভুল হয়েছে।" };
+    return j;
+  } catch {
+    return { ok: false, error: "Internet-এ সমস্যা হচ্ছে।" };
+  }
+}
+
+function showLockError(msg) {
+  const el = document.getElementById("lockError");
+  el.textContent = msg;
+  el.classList.remove("hidden");
+}
+
+function hideLockError() {
+  document.getElementById("lockError").classList.add("hidden");
+}
+
+function lockApp(message) {
+  localStorage.removeItem(PASSWORD_KEY);
+  sessionPassword = "";
+  document.getElementById("lockScreen").classList.remove("hidden");
+  if (message) {
+    document.getElementById("lockSubtitle").textContent = message;
+  }
+  renderLockForm();
+}
+
+function unlockApp() {
+  document.getElementById("lockScreen").classList.add("hidden");
+}
+
+async function renderLockForm() {
+  const subtitle = document.getElementById("lockSubtitle");
+  const form = document.getElementById("lockForm");
+  const oldWrap = document.getElementById("lockOldPasswordWrap");
+  const confirmWrap = document.getElementById("lockConfirmWrap");
+  const label = document.getElementById("lockPasswordLabel");
+  const submitBtn = document.getElementById("lockSubmitBtn");
+  form.classList.add("hidden");
+  hideLockError();
+
+  const hasPassword = await checkHasPassword();
+
+  if (hasPassword === null) {
+    subtitle.textContent = "⚠️ Cloud-এ পৌঁছানো যাচ্ছে না — Internet চেক করে আবার চেষ্টা করুন।";
+    return;
+  }
+
+  oldWrap.classList.add("hidden");
+  confirmWrap.classList.toggle("hidden", hasPassword);
+  label.textContent = hasPassword ? "Password" : "নতুন Password সেট করুন";
+  submitBtn.textContent = hasPassword ? "প্রবেশ করুন" : "Password সেট করুন";
+  subtitle.textContent = hasPassword ? "চালিয়ে যেতে Password দিন" : "এই দোকানের POS-এর জন্য প্রথমবার একটা Password সেট করুন";
+  form.dataset.mode = hasPassword ? "verify" : "create";
+  form.classList.remove("hidden");
+  document.getElementById("lockPassword").value = "";
+  document.getElementById("lockConfirmPassword").value = "";
+  document.getElementById("lockPassword").focus();
+}
+
+document.getElementById("lockForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  hideLockError();
+  const mode = e.target.dataset.mode;
+  const password = document.getElementById("lockPassword").value;
+  const submitBtn = document.getElementById("lockSubmitBtn");
+  submitBtn.disabled = true;
+
+  if (mode === "create") {
+    const confirmPw = document.getElementById("lockConfirmPassword").value;
+    if (password.length < 4) {
+      showLockError("Password কমপক্ষে ৪ অক্ষরের হতে হবে।");
+      submitBtn.disabled = false;
+      return;
+    }
+    if (password !== confirmPw) {
+      showLockError("দুটো Password মিলছে না।");
+      submitBtn.disabled = false;
+      return;
+    }
+    const res = await setPassword(password, "");
+    submitBtn.disabled = false;
+    if (!res.ok) {
+      showLockError(res.error || "Password সেট করা যায়নি।");
+      return;
+    }
+    sessionPassword = password;
+    localStorage.setItem(PASSWORD_KEY, password);
+    unlockApp();
+    startApp();
+    return;
+  }
+
+  // mode === "verify"
+  const res = await verifyPassword(password);
+  submitBtn.disabled = false;
+  if (res.networkError) {
+    showLockError("Internet-এ সমস্যা হচ্ছে, আবার চেষ্টা করুন।");
+    return;
+  }
+  if (!res.ok) {
+    showLockError("Password ভুল হয়েছে।");
+    return;
+  }
+  sessionPassword = password;
+  localStorage.setItem(PASSWORD_KEY, password);
+  unlockApp();
+  startApp();
+});
+
+async function initAuth() {
+  if (sessionPassword) {
+    const res = await verifyPassword(sessionPassword);
+    if (res.ok) {
+      unlockApp();
+      startApp();
+      return;
+    }
+    if (res.networkError) {
+      // Internet নেই — device-এ আগে থেকেই login করা ছিল ধরে নিয়ে local cache দিয়ে চালিয়ে যাওয়া হচ্ছে;
+      // internet ফিরলে normal ভাবে verify/sync হয়ে যাবে।
+      unlockApp();
+      startApp();
+      return;
+    }
+    // password পাল্টে গেছে বা আর কার্যকর নেই
+    localStorage.removeItem(PASSWORD_KEY);
+    sessionPassword = "";
+  }
+  renderLockForm();
+}
+
+let appStarted = false;
+function startApp() {
+  if (appStarted) return;
+  appStarted = true;
+  render(); // local cache দিয়ে সাথে সাথে দেখানো — internet slow থাকলেও UI blank থাকবে না
+  initialCloudSync(); // তারপর MongoDB থেকে latest data টেনে আনবে
+  setInterval(pollRemoteData, POLL_INTERVAL_MS); // অন্য device-এর changes নিয়মিত check হবে
 }
 
 function money(n) {
@@ -1268,6 +1493,33 @@ function resetAllData() {
   );
 }
 
+function changePassword() {
+  openModal("Password পরিবর্তন করুন", `
+    <label class="block"><span class="text-sm font-medium">পুরনো Password</span>
+      <input name="oldPassword" type="password" required class="mt-1 w-full border rounded-lg px-3 py-2" autocomplete="off" />
+    </label>
+    <label class="block"><span class="text-sm font-medium">নতুন Password</span>
+      <input name="newPassword" type="password" required minlength="4" class="mt-1 w-full border rounded-lg px-3 py-2" autocomplete="off" />
+    </label>
+    <label class="block"><span class="text-sm font-medium">নতুন Password আবার লিখুন</span>
+      <input name="confirmPassword" type="password" required class="mt-1 w-full border rounded-lg px-3 py-2" autocomplete="off" />
+    </label>
+    <button type="submit" class="w-full bg-slate-800 text-white rounded-lg py-2.5">Password পরিবর্তন করুন</button>
+  `, async fd => {
+    const oldPassword = fd.get("oldPassword");
+    const newPassword = fd.get("newPassword");
+    const confirmPassword = fd.get("confirmPassword");
+    if (newPassword.length < 4) return alert("নতুন Password কমপক্ষে ৪ অক্ষরের হতে হবে।");
+    if (newPassword !== confirmPassword) return alert("নতুন Password দুই জায়গায় মিলছে না।");
+    const res = await setPassword(newPassword, oldPassword);
+    if (!res.ok) return alert(res.error || "Password পরিবর্তন করা যায়নি।");
+    sessionPassword = newPassword;
+    localStorage.setItem(PASSWORD_KEY, newPassword);
+    closeModal();
+    alert("Password পরিবর্তন হয়ে গেছে।");
+  });
+}
+
 /* ---------- BINDINGS ---------- */
 
 document.getElementById("addBrandBtn").onclick = addBrand;
@@ -1284,6 +1536,8 @@ document.getElementById("search").oninput = () => { inventoryPage = 1; render();
 document.getElementById("customerDueFilter").onchange = () => { customerPage = 1; renderCustomers(); };
 document.getElementById("footerResetBtn").onclick = resetAllData;
 document.getElementById("syncNowBtn").onclick = manualSync;
+document.getElementById("footerLockBtn").onclick = () => lockApp("Password দিয়ে আবার Login করুন।");
+document.getElementById("footerChangePwBtn").onclick = changePassword;
 
 // রোজকার কাজে যেগুলো বারবার দেখার দরকার নেই (Product/Brand Management, Recent Returns) —
 // সেগুলো ভাঁজ করা থাকবে, চাইলে বাটনে চেপে খুলে দেখা যাবে।
@@ -1299,9 +1553,7 @@ setupCollapsible("productMgmtToggle", "productMgmtContent");
 setupCollapsible("returnsToggle", "returnsContent");
 setupCollapsible("brandMgmtToggle", "brandMgmtContent");
 
-render(); // local cache দিয়ে সাথে সাথে দেখানো — internet slow থাকলেও UI blank থাকবে না
-initialCloudSync(); // তারপর MongoDB থেকে latest data টেনে আনবে
-setInterval(pollRemoteData, POLL_INTERVAL_MS); // অন্য device-এর changes নিয়মিত check হবে
+initAuth(); // password ঠিক থাকলে app শুরু হবে, নাহলে lock screen দেখাবে
 </script>
 </body>
 </html>

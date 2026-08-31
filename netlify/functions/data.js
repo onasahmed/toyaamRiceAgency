@@ -23,32 +23,42 @@ exports.handler = async (event) => {
   }
 
   if (!uri) {
-    return {
-      statusCode: 500,
-      headers,
-      body: JSON.stringify({ error: "MONGODB_URI environment variable is not set in Netlify." }),
-    };
+    return { statusCode: 500, headers, body: JSON.stringify({ error: "MONGODB_URI environment variable is not set in Netlify." }) };
   }
 
   try {
     const client = await getClient();
     const database = client.db("rice_arat_pos");
-    const col = database.collection("shop_data");
+    const dataCol = database.collection("shop_data");
+    const authCol = database.collection("shop_auth");
+
+    const authDoc = await authCol.findOne({ _id: "auth" });
+    const storedPassword = authDoc && authDoc.password;
+
+    let providedPassword = null;
+    let payload = null;
+    if (event.httpMethod === "GET") {
+      providedPassword = event.queryStringParameters && event.queryStringParameters.password;
+    } else if (event.httpMethod === "POST") {
+      payload = JSON.parse(event.body || "{}");
+      providedPassword = payload.password;
+    }
+
+    // password set করা থাকলে সেটা মিলতেই হবে — এখানেই আসল access control হচ্ছে,
+    // শুধু frontend-এর lock screen "দেখানো" না, বরং data পড়া/লেখা দুটোই আটকে যাবে।
+    if (storedPassword && providedPassword !== storedPassword) {
+      return { statusCode: 401, headers, body: JSON.stringify({ error: "ভুল অথবা অনুপস্থিত Password।" }) };
+    }
 
     if (event.httpMethod === "GET") {
-      const doc = await col.findOne({ _id: "default" });
-      return {
-        statusCode: 200,
-        headers,
-        body: JSON.stringify(doc ? doc.data : null),
-      };
+      const doc = await dataCol.findOne({ _id: "default" });
+      return { statusCode: 200, headers, body: JSON.stringify(doc ? doc.data : null) };
     }
 
     if (event.httpMethod === "POST") {
-      const payload = JSON.parse(event.body || "{}");
-      await col.updateOne(
+      await dataCol.updateOne(
         { _id: "default" },
-        { $set: { data: payload, updatedAt: new Date() } },
+        { $set: { data: payload.data, updatedAt: new Date() } },
         { upsert: true }
       );
       return { statusCode: 200, headers, body: JSON.stringify({ ok: true }) };
@@ -56,10 +66,6 @@ exports.handler = async (event) => {
 
     return { statusCode: 405, headers, body: "Method Not Allowed" };
   } catch (err) {
-    return {
-      statusCode: 500,
-      headers,
-      body: JSON.stringify({ error: err.message }),
-    };
+    return { statusCode: 500, headers, body: JSON.stringify({ error: err.message }) };
   }
 };
