@@ -62,6 +62,16 @@
           <p class="text-sm text-slate-500">আজকের বিক্রি</p>
           <p id="dailySales" class="text-3xl font-bold mt-1 text-blue-600">৳ 0</p>
         </div>
+        <div class="bg-white rounded-xl p-5 shadow-sm border-l-4 border-l-amber-500 flex items-center justify-between gap-3">
+          <div>
+            <p class="text-sm text-slate-500">ক্যাশ বক্স</p>
+            <p id="cashBalance" class="text-3xl font-bold mt-1 text-amber-600">৳ 0</p>
+          </div>
+          <div class="flex flex-col gap-1.5 shrink-0">
+            <button id="addCashBtn" type="button" class="px-3 py-1.5 rounded-lg bg-amber-600 text-white text-xs font-semibold hover:bg-amber-500">+ Cash</button>
+            <button id="addExpenseBtn" type="button" class="px-3 py-1.5 rounded-lg bg-red-50 border border-red-200 text-red-700 text-xs font-semibold hover:bg-red-100">− খরচ</button>
+          </div>
+        </div>
       </section>
 
       <section class="bg-white rounded-xl shadow-sm overflow-hidden">
@@ -194,23 +204,6 @@
         </div>
         <div id="brandMgmtContent" class="hidden">
           <div id="brandList" class="p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3"></div>
-        </div>
-      </section>
-
-      <section class="bg-white rounded-xl shadow-sm overflow-hidden border-l-4 border-l-amber-500">
-        <div class="p-4 border-b flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
-          <div>
-            <h2 class="font-bold text-lg">ক্যাশ বক্স</h2>
-            <p class="text-sm text-slate-500">দোকানের হাতে থাকা নগদ টাকার হিসাব</p>
-          </div>
-          <div class="flex gap-2">
-            <button id="addCashBtn" type="button" class="px-3 py-2 rounded-lg bg-amber-600 text-white text-sm hover:bg-amber-500">+ Cash</button>
-            <button id="addExpenseBtn" type="button" class="px-3 py-2 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm hover:bg-red-100">− খরচ</button>
-          </div>
-        </div>
-        <div class="p-6 text-center">
-          <p class="text-sm text-slate-500">এই মুহূর্তে ক্যাশ বক্সে আছে</p>
-          <p id="cashBalance" class="text-4xl font-bold mt-1 text-amber-600">৳ 0</p>
         </div>
       </section>
 
@@ -883,13 +876,11 @@ function deleteProduct(id) {
 function addPurchase() {
   if (!db.products.length) return alert("আগে Product যোগ করুন।");
   openModal("Stock যোগ করুন (Restock)", `
+    <label class="block"><span class="text-sm font-medium">Brand</span>
+      <select id="purchaseBrandSelect" name="brandId" required class="mt-1 w-full border rounded-lg px-3 py-2">${brandOptions()}</select>
+    </label>
     <label class="block"><span class="text-sm font-medium">Product</span>
-      <select id="purchaseProductSelect" name="productId" required class="mt-1 w-full border rounded-lg px-3 py-2">
-        ${db.products.map(p => {
-          const b = db.brands.find(x => x.id === p.brandId);
-          return `<option value="${p.id}">${escapeHtml(p.name)} — ${escapeHtml(b?.name || "")}</option>`;
-        }).join("")}
-      </select>
+      <select id="purchaseProductSelect" name="productId" required class="mt-1 w-full border rounded-lg px-3 py-2"></select>
     </label>
     <label class="block"><span class="text-sm font-medium">বস্তার সাইজ (kg)</span>
       <input id="purchaseSackSize" name="sackSize" list="sackSizeList" type="number" min="0" step="0.01" value="25" class="mt-1 w-full border rounded-lg px-3 py-2" />
@@ -909,19 +900,22 @@ function addPurchase() {
     <div class="text-sm text-slate-600 bg-slate-50 rounded-lg px-3 py-2">মোট যোগ হবে: <span id="purchaseComputedQty" class="font-semibold">0 kg</span></div>
     <button type="submit" class="w-full bg-amber-600 text-white rounded-lg py-2.5">Stock যোগ করুন</button>
   `, fd => {
+    const brandId = fd.get("brandId");
     const productId = fd.get("productId");
     const sackSize = Number(fd.get("sackSize") || 0);
     const sackCount = Number(fd.get("sackCount") || 0);
     const extraKg = Number(fd.get("extraKg") || 0);
     const qty = Number((sackCount * sackSize + extraKg).toFixed(2));
     const p = db.products.find(x => x.id === productId);
-    if (!p) return alert("Product পাওয়া যায়নি।");
+    if (!p) return alert("Product পাওয়া যায়নি — এই Brand-এ কোনো Product নেই, আগে Product যোগ করুন।");
+    if (p.brandId !== brandId) return alert("Product ও Brand মিলছে না।");
     if (qty <= 0) return alert("Quantity 0 এর বেশি হতে হবে — বস্তা সংখ্যা বা অতিরিক্ত kg দিন।");
     p.stock = Number((p.stock + qty).toFixed(2));
     p.sackSize = sackSize || p.sackSize;
     save(); closeModal();
   });
 
+  const brandSelect = document.getElementById("purchaseBrandSelect");
   const productSelect = document.getElementById("purchaseProductSelect");
   const sackSizeEl = document.getElementById("purchaseSackSize");
   const sackCountEl = document.getElementById("purchaseSackCount");
@@ -936,9 +930,18 @@ function addPurchase() {
     if (p && p.sackSize) sackSizeEl.value = p.sackSize;
     calc();
   }
+  // Brand বেছে নিলে শুধু সেই Brand-এর Product-ই দেখাবে — 100+ Product থাকলে এতে খোঁজা সহজ হবে
+  function populateProductsForBrand() {
+    const filtered = db.products.filter(p => p.brandId === brandSelect.value);
+    productSelect.innerHTML = filtered.length
+      ? filtered.map(p => `<option value="${p.id}">${escapeHtml(p.name)}</option>`).join("")
+      : `<option value="" disabled selected>এই Brand-এ কোনো Product নেই</option>`;
+    prefillFromProduct();
+  }
+  brandSelect.addEventListener("change", populateProductsForBrand);
   productSelect.addEventListener("change", prefillFromProduct);
   [sackSizeEl, sackCountEl, extraKgEl].forEach(el => el.addEventListener("input", calc));
-  prefillFromProduct();
+  populateProductsForBrand();
 }
 
 function payCustomerDue(preselectId = "") {
