@@ -38,6 +38,29 @@ MongoDB-এর `shop_auth` collection-এ প্লেইন টেক্সট�
 যাবে না, যেহেতু backend (data.js) নিজেই password যাচাই করে। প্রতিটা device একবার Password দিলে
 সেটা মনে রাখে (আবার আবার চাইবে না), যদি না footer থেকে "🔒 Lock করুন" চেপে বের করে দাও।
 
+## Cash Box
+দোকানের হাতের নগদের হিসাব — Sale-এ যা পাওয়া যায় ও Customer Due আদায় হলে যোগ হয়; Customer-কে
+Advance ফেরত দিলে বা "− খরচ" দিয়ে কোনো খরচ লিখলে বাদ যায়। প্রতিটা movement "Cash History"-তে
+লগ থাকে (paginated, কারণসহ)।
+
+Purchase/Restock-এ এখন আর ক্রয়মূল্য বা Supplier Due হিসাব করা হয় না — শুধু Inventory-তে stock
+(kg) যোগ হয়। Supplier-কে কত টাকা দেওয়া বাকি সেটা এই app-এর বাইরে হিসাব রাখতে হবে।
+
+## Data আকার নিয়ন্ত্রণ (MongoDB 16MB single-document সীমা)
+পুরো `db` একটাই MongoDB document হিসেবে save হয় — আর প্রতিটা MongoDB document-এর সর্বোচ্চ সাইজ
+**16MB** (এটা Atlas-এর 500MB মোট storage সীমার চেয়ে অনেক আগেই আসতে পারে, যদি sales/returns/cash
+history অসীম বাড়তে থাকে)। এজন্য `save()`-এর ভেতর automatic trimming বসানো আছে — প্রতিবার save
+হওয়ার সময় পুরনো entry স্বয়ংক্রিয়ভাবে বাদ পড়ে যায়:
+
+- Sales: সাম্প্রতিক ৫০০টা রাখা হয়
+- Returns: সাম্প্রতিক ৩০০টা রাখা হয়
+- Cash History: সাম্প্রতিক ৫০০টা রাখা হয়
+- Customer Payments (internal log): সাম্প্রতিক ৫০০টা রাখা হয়
+
+এই সংখ্যাগুলো `public/index.html`-এ `HISTORY_LIMITS` নামের একটা constant-এ আছে — দরকার হলে
+বাড়িয়ে/কমিয়ে নেওয়া যাবে। Brand/Product/Customer তালিকা trim হয় না (এগুলো সাধারণত সীমিত
+সংখ্যক থাকে বলে সমস্যা করে না)।
+
 ## ফাইল গঠন
 ```
 public/index.html          → পুরো POS app (এটাই মূল site)

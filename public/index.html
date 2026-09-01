@@ -47,8 +47,7 @@
         </div>
         <div class="grid grid-cols-2 sm:flex sm:flex-wrap gap-2">
           <button id="addBrandBtn" type="button" class="px-2.5 py-2 sm:px-4 text-xs sm:text-sm rounded-lg bg-slate-800 text-white hover:bg-slate-700">+ Brand</button>
-          <button id="purchaseBtn" type="button" class="px-2.5 py-2 sm:px-4 text-xs sm:text-sm rounded-lg bg-amber-600 text-white hover:bg-amber-500">+ Purchase</button>
-          <button id="supplierPaymentBtn" type="button" class="px-2.5 py-2 sm:px-4 text-xs sm:text-sm rounded-lg bg-violet-600 text-white hover:bg-violet-500">Supplier Payment</button>
+          <button id="purchaseBtn" type="button" class="px-2.5 py-2 sm:px-4 text-xs sm:text-sm rounded-lg bg-amber-600 text-white hover:bg-amber-500">+ Stock</button>
           <button id="addProductBtn" type="button" class="px-2.5 py-2 sm:px-4 text-xs sm:text-sm rounded-lg bg-emerald-600 text-white hover:bg-emerald-500">+ Product</button>
           <button id="sellBtn" type="button" class="px-2.5 py-2 sm:px-4 text-xs sm:text-sm rounded-lg bg-blue-600 text-white hover:bg-blue-500">+ Sell</button>
           <button id="addCustomerBtn" type="button" class="px-2.5 py-2 sm:px-4 text-xs sm:text-sm rounded-lg bg-teal-600 text-white hover:bg-teal-500">+ Customer</button>
@@ -87,7 +86,6 @@
                   <th class="text-left p-3">Product</th>
                   <th class="text-left p-3">Brand</th>
                   <th class="text-right p-3">Stock</th>
-                  <th class="text-right p-3">Buy/kg</th>
                   <th class="text-right p-3">Sell/kg</th>
                   <th class="text-center p-3">Action</th>
                 </tr>
@@ -103,7 +101,7 @@
         <div class="p-4 border-b flex flex-col md:flex-row gap-3 md:items-center md:justify-between">
           <div>
             <h2 class="font-bold text-lg">Inventory</h2>
-            <p class="text-sm text-slate-500">প্রতিটি product-এর বর্তমান stock, ক্রয়মূল্য ও brand</p>
+            <p class="text-sm text-slate-500">প্রতিটি product-এর বর্তমান stock, বিক্রয়মূল্য ও brand</p>
           </div>
           <input id="search" class="border rounded-lg px-3 py-2 w-full md:w-72" placeholder="Product / Brand search..." />
         </div>
@@ -117,7 +115,6 @@
                 <th class="text-left p-3">Product</th>
                 <th class="text-left p-3">Brand</th>
                 <th class="text-right p-3">Stock (kg)</th>
-                <th class="text-right p-3">ক্রয়মূল্য/kg</th>
                 <th class="text-right p-3">বিক্রয়মূল্য/kg</th>
                 <th class="text-center p-3">Action</th>
               </tr>
@@ -200,18 +197,52 @@
         </div>
       </section>
 
-      <section class="grid grid-cols-1 xl:grid-cols-2 gap-5">
-        <div class="bg-white rounded-xl shadow-sm overflow-hidden">
-          <div class="p-4 border-b flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
-            <div>
-              <h2 class="font-bold text-lg">Supplier / Brand Due</h2>
-              <p class="text-sm text-slate-500">কোন Brand-এর কাছে কত টাকা বাকি আছে</p>
-            </div>
-            <button id="supplierDueBtn" type="button" class="px-3 py-2 rounded-lg bg-violet-600 text-white text-sm">পরিশোধ</button>
+      <section class="bg-white rounded-xl shadow-sm overflow-hidden border-l-4 border-l-amber-500">
+        <div class="p-4 border-b flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
+          <div>
+            <h2 class="font-bold text-lg">ক্যাশ বক্স</h2>
+            <p class="text-sm text-slate-500">দোকানের হাতে থাকা নগদ টাকার হিসাব</p>
           </div>
-          <div class="p-4 space-y-2" id="supplierDueList"></div>
+          <div class="flex gap-2">
+            <button id="addCashBtn" type="button" class="px-3 py-2 rounded-lg bg-amber-600 text-white text-sm hover:bg-amber-500">+ Cash</button>
+            <button id="addExpenseBtn" type="button" class="px-3 py-2 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm hover:bg-red-100">− খরচ</button>
+          </div>
         </div>
+        <div class="p-6 text-center">
+          <p class="text-sm text-slate-500">এই মুহূর্তে ক্যাশ বক্সে আছে</p>
+          <p id="cashBalance" class="text-4xl font-bold mt-1 text-amber-600">৳ 0</p>
+        </div>
+      </section>
 
+      <section class="bg-white rounded-xl shadow-sm overflow-hidden">
+        <div class="p-4 border-b flex items-center justify-between gap-3">
+          <div>
+            <h2 class="font-bold text-lg">Cash History</h2>
+            <p class="text-sm text-slate-500">ক্যাশ বক্সে কখন কী কারণে কত টাকা যোগ/বাদ হয়েছে</p>
+          </div>
+          <button id="cashHistoryToggle" type="button" class="px-3 py-2 rounded-lg bg-slate-100 text-slate-600 text-sm hover:bg-slate-200 transition shrink-0">▼ দেখুন</button>
+        </div>
+        <div id="cashHistoryContent" class="hidden">
+          <!-- Mobile: card list -->
+          <div id="cashLedgerCards" class="sm:hidden divide-y"></div>
+          <!-- Desktop/tablet: table -->
+          <div class="hidden sm:block overflow-x-auto">
+            <table class="w-full text-sm">
+              <thead class="bg-slate-50">
+                <tr>
+                  <th class="text-left p-3">Date</th>
+                  <th class="text-left p-3">কারণ</th>
+                  <th class="text-right p-3">পরিমাণ</th>
+                </tr>
+              </thead>
+              <tbody id="cashLedgerBody"></tbody>
+            </table>
+          </div>
+          <div id="cashLedgerPagination"></div>
+        </div>
+      </section>
+
+      <section class="grid grid-cols-1">
         <div class="bg-white rounded-xl shadow-sm overflow-hidden">
           <div class="p-4 border-b flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
             <div>
@@ -275,7 +306,9 @@ const initial = {
   supplierPayments: [],
   customers: [],
   customerPayments: [],
-  returns: []
+  returns: [],
+  cashBalance: 0,
+  cashLedger: []
 };
 
 function normalizeDb(obj) {
@@ -287,6 +320,8 @@ function normalizeDb(obj) {
   obj.customers ||= [];
   obj.customerPayments ||= [];
   obj.returns ||= [];
+  obj.cashBalance = Number(obj.cashBalance || 0);
+  obj.cashLedger ||= [];
   return obj;
 }
 
@@ -402,7 +437,22 @@ function manualSync() {
   pushRemoteData(db);
 }
 
+// MongoDB-এর একটা single document-এর সর্বোচ্চ সাইজ 16MB — sales/returns/cash-history
+// অসীম বেড়ে চললে একদিন সেই সীমা ছাড়িয়ে যাবে (Atlas-এর 500MB মোট storage-এর অনেক আগেই)
+// এবং তখন site পুরোপুরি save/load বন্ধ হয়ে যাবে। তাই lifetime history না রেখে সবসময়
+// সাম্প্রতিক কিছু entry-ই রাখা হয় — পুরনোগুলো নিজে থেকেই ঝরে যায়, আলাদা করে কিছু করতে হয় না।
+const HISTORY_LIMITS = { sales: 500, returns: 300, cashLedger: 500, customerPayments: 500 };
+
+function trimHistory(d) {
+  if (d.sales.length > HISTORY_LIMITS.sales) d.sales = d.sales.slice(0, HISTORY_LIMITS.sales);
+  if (d.returns.length > HISTORY_LIMITS.returns) d.returns = d.returns.slice(0, HISTORY_LIMITS.returns);
+  if (d.cashLedger.length > HISTORY_LIMITS.cashLedger) d.cashLedger = d.cashLedger.slice(0, HISTORY_LIMITS.cashLedger);
+  if (d.customerPayments.length > HISTORY_LIMITS.customerPayments) d.customerPayments = d.customerPayments.slice(0, HISTORY_LIMITS.customerPayments);
+  return d;
+}
+
 function save() {
+  trimHistory(db);
   localStorage.setItem(KEY, JSON.stringify(db));
   render();
   pushRemoteData(db);
@@ -747,14 +797,9 @@ function addProduct() {
       </label>
     </div>
     <div class="text-sm text-slate-600 bg-slate-50 rounded-lg px-3 py-2">মোট Initial Stock: <span id="computedStock" class="font-semibold">0 kg</span></div>
-    <div class="grid grid-cols-2 gap-3">
-      <label class="block"><span class="text-sm font-medium">ক্রয়মূল্য/kg</span>
-        <input name="buyPrice" type="number" min="0" step="0.01" value="0" required class="mt-1 w-full border rounded-lg px-3 py-2" />
-      </label>
-      <label class="block"><span class="text-sm font-medium">বিক্রয়মূল্য/kg</span>
-        <input name="sellPrice" type="number" min="0" step="0.01" value="0" required class="mt-1 w-full border rounded-lg px-3 py-2" />
-      </label>
-    </div>
+    <label class="block"><span class="text-sm font-medium">বিক্রয়মূল্য/kg</span>
+      <input name="sellPrice" type="number" min="0" step="0.01" value="0" required class="mt-1 w-full border rounded-lg px-3 py-2" />
+    </label>
     <button type="submit" class="w-full bg-emerald-600 text-white rounded-lg py-2.5">Save Product</button>
   `, fd => {
     const name = String(fd.get("name") || "").trim();
@@ -763,20 +808,10 @@ function addProduct() {
     const sackCount = Number(fd.get("sackCount") || 0);
     const extraKg = Number(fd.get("extraKg") || 0);
     const stock = Number((sackCount * sackSize + extraKg).toFixed(2));
-    const buyPrice = Number(fd.get("buyPrice") || 0);
     const sellPrice = Number(fd.get("sellPrice") || 0);
     if (!name || !brandId) return alert("Product name ও Brand দিন।");
     const productId = crypto.randomUUID();
-    db.products.push({id: productId, name, brandId, stock, buyPrice, sellPrice, sackSize});
-    // Initial stock মানেই Brand থেকে কেনা — তাই এটাও একটা Purchase হিসেবে জমা হবে,
-    // আর শুরুতে এই টাকা Supplier Due-তে দেখাবে (paid: 0, due: পুরো টাকা)।
-    if (stock > 0) {
-      const total = Number((stock * buyPrice).toFixed(2));
-      db.purchases.unshift({
-        id: crypto.randomUUID(), brandId, productId, productName: name,
-        qty: stock, buyPrice, total, paid: 0, due: total, date: new Date().toISOString()
-      });
-    }
+    db.products.push({id: productId, name, brandId, stock, sellPrice, sackSize});
     save();
     closeModal();
   });
@@ -809,14 +844,9 @@ function editProduct(id) {
         <option value="20"></option><option value="25"></option><option value="50"></option>
       </datalist>
     </label>
-    <div class="grid grid-cols-2 gap-3">
-      <label class="block"><span class="text-sm font-medium">Stock (kg)</span>
-        <input name="stock" type="number" min="0" step="0.01" value="${p.stock}" required class="mt-1 w-full border rounded-lg px-3 py-2" />
-      </label>
-      <label class="block"><span class="text-sm font-medium">ক্রয়মূল্য/kg</span>
-        <input name="buyPrice" type="number" min="0" step="0.01" value="${p.buyPrice}" required class="mt-1 w-full border rounded-lg px-3 py-2" />
-      </label>
-    </div>
+    <label class="block"><span class="text-sm font-medium">Stock (kg)</span>
+      <input name="stock" type="number" min="0" step="0.01" value="${p.stock}" required class="mt-1 w-full border rounded-lg px-3 py-2" />
+    </label>
     <label class="block"><span class="text-sm font-medium">বিক্রয়মূল্য/kg</span>
       <input name="sellPrice" type="number" min="0" step="0.01" value="${p.sellPrice}" required class="mt-1 w-full border rounded-lg px-3 py-2" />
     </label>
@@ -826,7 +856,6 @@ function editProduct(id) {
     p.brandId = fd.get("brandId");
     p.sackSize = Number(fd.get("sackSize") || 0);
     p.stock = Number(fd.get("stock"));
-    p.buyPrice = Number(fd.get("buyPrice"));
     p.sellPrice = Number(fd.get("sellPrice"));
     save(); closeModal();
   });
@@ -840,9 +869,8 @@ function deleteProduct(id) {
   const p = db.products.find(x => x.id === id);
   if (!p) return;
   const hasSales = db.sales.some(s => s.productId === id);
-  const hasPurchases = db.purchases.some(x => x.productId === id);
-  if (hasSales || hasPurchases) {
-    return alert("এই Product-এর Sales/Purchase history আছে। History নষ্ট না করার জন্য delete করা বন্ধ রাখা হয়েছে। Edit করে ব্যবহার করুন।");
+  if (hasSales) {
+    return alert("এই Product-এর Sales history আছে। History নষ্ট না করার জন্য delete করা বন্ধ রাখা হয়েছে। Edit করে ব্যবহার করুন।");
   }
   confirmAction(`"${p.name}" Product delete করবেন?`, () => {
     db.products = db.products.filter(x => x.id !== id);
@@ -850,22 +878,11 @@ function deleteProduct(id) {
   });
 }
 
-/* ---------- PURCHASE / SUPPLIER ---------- */
-
-function getSupplierDues() {
-  return db.brands.map(b => {
-    const purchaseDue = db.purchases.filter(x => x.brandId === b.id).reduce((s,x) => s + Number(x.due || 0), 0);
-    const paid = db.supplierPayments.filter(x => x.brandId === b.id).reduce((s,x) => s + Number(x.amount || 0), 0);
-    return {brandId: b.id, brandName: b.name, due: Math.max(0, purchaseDue - paid)};
-  });
-}
+/* ---------- PURCHASE (শুধু Inventory-তে stock যোগ করে, কোনো দাম/due হিসাব হয় না) ---------- */
 
 function addPurchase() {
-  if (!db.brands.length || !db.products.length) return alert("আগে Brand এবং Product যোগ করুন।");
-  openModal("নতুন Purchase", `
-    <label class="block"><span class="text-sm font-medium">Brand / Supplier</span>
-      <select name="brandId" required class="mt-1 w-full border rounded-lg px-3 py-2">${brandOptions()}</select>
-    </label>
+  if (!db.products.length) return alert("আগে Product যোগ করুন।");
+  openModal("Stock যোগ করুন (Restock)", `
     <label class="block"><span class="text-sm font-medium">Product</span>
       <select id="purchaseProductSelect" name="productId" required class="mt-1 w-full border rounded-lg px-3 py-2">
         ${db.products.map(p => {
@@ -889,38 +906,19 @@ function addPurchase() {
         <input id="purchaseExtraKg" name="extraKg" type="number" min="0" step="0.01" value="0" class="mt-1 w-full border rounded-lg px-3 py-2" />
       </label>
     </div>
-    <div class="text-sm text-slate-600 bg-slate-50 rounded-lg px-3 py-2">মোট Purchase Qty: <span id="purchaseComputedQty" class="font-semibold">0 kg</span></div>
-    <label class="block"><span class="text-sm font-medium">ক্রয়মূল্য / kg</span>
-      <input name="buyPrice" type="number" min="0" step="0.01" required class="mt-1 w-full border rounded-lg px-3 py-2" />
-    </label>
-    <div class="grid grid-cols-2 gap-3">
-      <label class="block"><span class="text-sm font-medium">এখন পরিশোধ</span>
-        <input name="paid" type="number" min="0" step="0.01" value="0" required class="mt-1 w-full border rounded-lg px-3 py-2" />
-      </label>
-      <label class="block"><span class="text-sm font-medium">Due</span>
-        <input name="due" type="number" readonly class="mt-1 w-full border rounded-lg px-3 py-2 bg-slate-50" />
-      </label>
-    </div>
-    <button type="submit" class="w-full bg-amber-600 text-white rounded-lg py-2.5">Save Purchase</button>
+    <div class="text-sm text-slate-600 bg-slate-50 rounded-lg px-3 py-2">মোট যোগ হবে: <span id="purchaseComputedQty" class="font-semibold">0 kg</span></div>
+    <button type="submit" class="w-full bg-amber-600 text-white rounded-lg py-2.5">Stock যোগ করুন</button>
   `, fd => {
-    const brandId = fd.get("brandId");
     const productId = fd.get("productId");
     const sackSize = Number(fd.get("sackSize") || 0);
     const sackCount = Number(fd.get("sackCount") || 0);
     const extraKg = Number(fd.get("extraKg") || 0);
     const qty = Number((sackCount * sackSize + extraKg).toFixed(2));
-    const buyPrice = Number(fd.get("buyPrice"));
-    const total = qty * buyPrice;
-    const paid = Math.min(Math.max(Number(fd.get("paid")), 0), total);
-    const due = total - paid;
     const p = db.products.find(x => x.id === productId);
     if (!p) return alert("Product পাওয়া যায়নি।");
-    if (p.brandId !== brandId) return alert("Product ও Brand মিলছে না।");
-    if (qty <= 0) return alert("Purchase quantity 0 এর বেশি হতে হবে — বস্তা সংখ্যা বা অতিরিক্ত kg দিন।");
+    if (qty <= 0) return alert("Quantity 0 এর বেশি হতে হবে — বস্তা সংখ্যা বা অতিরিক্ত kg দিন।");
     p.stock = Number((p.stock + qty).toFixed(2));
-    p.buyPrice = buyPrice;
     p.sackSize = sackSize || p.sackSize;
-    db.purchases.unshift({id: crypto.randomUUID(), brandId, productId, productName: p.name, qty, buyPrice, total, paid, due, date: new Date().toISOString()});
     save(); closeModal();
   });
 
@@ -929,14 +927,9 @@ function addPurchase() {
   const sackCountEl = document.getElementById("purchaseSackCount");
   const extraKgEl = document.getElementById("purchaseExtraKg");
   const computedQtyEl = document.getElementById("purchaseComputedQty");
-  const price = document.querySelector('#modalForm [name="buyPrice"]');
-  const paid = document.querySelector('#modalForm [name="paid"]');
-  const due = document.querySelector('#modalForm [name="due"]');
   function calc() {
     const qty = (Number(sackCountEl.value) || 0) * (Number(sackSizeEl.value) || 0) + (Number(extraKgEl.value) || 0);
     computedQtyEl.textContent = qty.toLocaleString("en-BD", {maximumFractionDigits: 2}) + " kg";
-    const total = qty * Number(price.value || 0);
-    due.value = Math.max(0, total - Number(paid.value || 0)).toFixed(2);
   }
   function prefillFromProduct() {
     const p = db.products.find(x => x.id === productSelect.value);
@@ -944,31 +937,8 @@ function addPurchase() {
     calc();
   }
   productSelect.addEventListener("change", prefillFromProduct);
-  [sackSizeEl, sackCountEl, extraKgEl, price, paid].forEach(el => el.addEventListener("input", calc));
+  [sackSizeEl, sackCountEl, extraKgEl].forEach(el => el.addEventListener("input", calc));
   prefillFromProduct();
-}
-
-function paySupplier() {
-  const dues = getSupplierDues().filter(x => x.due > 0);
-  if (!dues.length) return alert("কোনো supplier/brand due নেই।");
-  openModal("Supplier Due Payment", `
-    <label class="block"><span class="text-sm font-medium">Brand</span>
-      <select name="brandId" required class="mt-1 w-full border rounded-lg px-3 py-2">
-        ${dues.map(x => `<option value="${x.brandId}">${escapeHtml(x.brandName)} — Due: ৳ ${money(x.due)}</option>`).join("")}
-      </select>
-    </label>
-    <label class="block"><span class="text-sm font-medium">পরিশোধের পরিমাণ</span>
-      <input name="amount" type="number" min="0.01" step="0.01" required class="mt-1 w-full border rounded-lg px-3 py-2" />
-    </label>
-    <button type="submit" class="w-full bg-violet-600 text-white rounded-lg py-2.5">পরিশোধ করুন</button>
-  `, fd => {
-    const brandId = fd.get("brandId");
-    const due = getSupplierDues().find(x => x.brandId === brandId)?.due || 0;
-    const amount = Number(fd.get("amount"));
-    if (amount <= 0 || amount > due) return alert("Due-এর চেয়ে বেশি পরিশোধ করা যাবে না।");
-    db.supplierPayments.unshift({id: crypto.randomUUID(), brandId, amount, date: new Date().toISOString()});
-    save(); closeModal();
-  });
 }
 
 function payCustomerDue(preselectId = "") {
@@ -992,6 +962,7 @@ function payCustomerDue(preselectId = "") {
     if (amount <= 0 || amount > Number(c.due || 0)) return alert("Due-এর চেয়ে বেশি নেওয়া যাবে না।");
     c.due = Number((Number(c.due || 0) - amount).toFixed(2));
     db.customerPayments.unshift({id: crypto.randomUUID(), customerId, customerName: c.name, amount, date: new Date().toISOString()});
+    addCashMovement(amount, "due_payment", `${c.name} থেকে বকেয়া আদায়`);
     save(); closeModal();
   });
 }
@@ -1011,7 +982,7 @@ function refundCustomerAdvance(preselectId = "") {
     <label class="block"><span class="text-sm font-medium">যত টাকা হাতে ফেরত দিচ্ছেন</span>
       <input name="amount" type="number" min="0.01" step="0.01" required class="mt-1 w-full border rounded-lg px-3 py-2" />
     </label>
-    <p class="text-xs text-slate-400">এই টাকাটা আপনি customer-কে cash দিয়ে বুঝিয়ে দিয়েছেন — নিশ্চিত করলে তার Advance থেকে এটা কমে যাবে।</p>
+    <p class="text-xs text-slate-400">এই টাকাটা আপনি customer-কে cash দিয়ে বুঝিয়ে দিয়েছেন — নিশ্চিত করলে তার Advance থেকে এটা কমে যাবে, আর Cash Box থেকেও এই টাকা বাদ যাবে।</p>
     <button type="submit" class="w-full bg-blue-600 text-white rounded-lg py-2.5">Advance ফেরত নিশ্চিত করুন</button>
   `, fd => {
     const customerId = fd.get("customerId");
@@ -1022,6 +993,57 @@ function refundCustomerAdvance(preselectId = "") {
     if (amount <= 0 || amount > advanceAvailable) return alert("Advance-এর চেয়ে বেশি ফেরত দেওয়া যাবে না।");
     c.due = Number((Number(c.due || 0) + amount).toFixed(2));
     db.customerPayments.unshift({id: crypto.randomUUID(), customerId, customerName: c.name, amount: -amount, type: "advance_refund", date: new Date().toISOString()});
+    addCashMovement(-amount, "advance_refund", `${c.name}-কে Advance ফেরত`);
+    save(); closeModal();
+  });
+}
+
+/* ---------- CASH BOX ---------- */
+// দোকানের হাতের cash-এর হিসাব — Sale-এ যা পাওয়া যায়, Due Payment আদায় হলে যোগ হয়;
+// Advance ফেরত দিলে বা নাস্তা/অন্য খরচ হলে বাদ যায়। প্রতিটা movement-এর log থাকবে
+// যাতে পরে দেখা যায় কেন কমলো/বাড়লো।
+
+function addCashMovement(amount, type, note) {
+  db.cashBalance = Number((Number(db.cashBalance || 0) + amount).toFixed(2));
+  db.cashLedger.unshift({
+    id: crypto.randomUUID(), type, amount: Number(amount.toFixed(2)), note,
+    date: new Date().toISOString(),
+  });
+}
+
+function addManualCash() {
+  openModal("Cash যোগ করুন", `
+    <label class="block"><span class="text-sm font-medium">কত টাকা যোগ করছেন</span>
+      <input name="amount" type="number" min="0.01" step="0.01" required class="mt-1 w-full border rounded-lg px-3 py-2" />
+    </label>
+    <label class="block"><span class="text-sm font-medium">কারণ (ঐচ্ছিক)</span>
+      <input name="note" class="mt-1 w-full border rounded-lg px-3 py-2" placeholder="যেমন: দিন শুরুর float" />
+    </label>
+    <button type="submit" class="w-full bg-amber-600 text-white rounded-lg py-2.5">Cash যোগ করুন</button>
+  `, fd => {
+    const amount = Number(fd.get("amount"));
+    const note = String(fd.get("note") || "").trim() || "Cash যোগ করা হয়েছে";
+    if (amount <= 0) return alert("সঠিক পরিমাণ দিন।");
+    addCashMovement(amount, "manual_add", note);
+    save(); closeModal();
+  });
+}
+
+function addExpense() {
+  openModal("খরচ যোগ করুন", `
+    <label class="block"><span class="text-sm font-medium">কত টাকা খরচ হলো</span>
+      <input name="amount" type="number" min="0.01" step="0.01" required class="mt-1 w-full border rounded-lg px-3 py-2" />
+    </label>
+    <label class="block"><span class="text-sm font-medium">কী কারণে</span>
+      <input name="note" required class="mt-1 w-full border rounded-lg px-3 py-2" placeholder="যেমন: নাস্তা, রিকশা ভাড়া" />
+    </label>
+    <button type="submit" class="w-full bg-red-600 text-white rounded-lg py-2.5">খরচ যোগ করুন</button>
+  `, fd => {
+    const amount = Number(fd.get("amount"));
+    const note = String(fd.get("note") || "").trim();
+    if (amount <= 0) return alert("সঠিক পরিমাণ দিন।");
+    if (!note) return alert("খরচের কারণ লিখুন।");
+    addCashMovement(-amount, "expense", note);
     save(); closeModal();
   });
 }
@@ -1146,6 +1168,7 @@ function sellProduct() {
     p.stock = Number((p.stock - qty).toFixed(2));
     c.due = Number((c.due || 0) + (total - paid));
     db.sales.unshift({id: crypto.randomUUID(), productId: p.id, productName: p.name, customerId: c.id, customerName: c.name, customerPhone: c.phone, qty, sellPrice: price, total, paid, due: total - paid, date: new Date().toISOString()});
+    if (paid > 0) addCashMovement(paid, "sale", `${p.name} বিক্রি (${c.name})`);
     save(); closeModal();
   });
 
@@ -1251,6 +1274,7 @@ const PAGE_SIZE = 6;
 let productMgmtPage = 1;
 let inventoryPage = 1;
 let customerPage = 1;
+let cashLedgerPage = 1;
 
 function paginate(array, page, pageSize) {
   const totalPages = Math.max(1, Math.ceil(array.length / pageSize));
@@ -1295,7 +1319,7 @@ function renderManagement() {
         <div class="text-xs text-slate-500">${escapeHtml(b?.name || "—")}</div>
         <div class="text-xs text-slate-600 mt-1">Stock: <span class="font-semibold">${p.stock} kg</span></div>
         ${bagLabel ? `<div class="text-xs text-slate-500">${bagLabel}</div>` : ""}
-        <div class="text-xs text-slate-500">ক্রয় ৳${money(p.buyPrice)} · বিক্রয় ৳${money(p.sellPrice)} /kg</div>
+        <div class="text-xs text-slate-500">বিক্রয় ৳${money(p.sellPrice)} /kg</div>
       </div>
       <div class="flex flex-col gap-1.5 shrink-0">
         <button type="button" onclick="editProduct('${p.id}')" class="px-3 py-1.5 rounded-lg bg-blue-50 border border-blue-200 text-blue-700 text-xs font-semibold hover:bg-blue-100">Edit</button>
@@ -1311,14 +1335,13 @@ function renderManagement() {
       <td class="p-3 font-medium">${escapeHtml(p.name)}</td>
       <td class="p-3">${escapeHtml(b?.name || "—")}</td>
       <td class="p-3 text-right">${p.stock} kg${bagLabel ? `<div class="text-xs text-slate-400 font-normal">${bagLabel}</div>` : ""}</td>
-      <td class="p-3 text-right">৳ ${money(p.buyPrice)}</td>
       <td class="p-3 text-right">৳ ${money(p.sellPrice)}</td>
       <td class="p-3 text-center whitespace-nowrap">
         <button type="button" onclick="editProduct('${p.id}')" class="px-3 py-1.5 rounded-lg bg-blue-50 border border-blue-200 text-blue-700 text-xs font-semibold hover:bg-blue-100 mr-1">Edit</button>
         <button type="button" onclick="deleteProduct('${p.id}')" class="px-3 py-1.5 rounded-lg bg-red-50 border border-red-200 text-red-700 text-xs font-semibold hover:bg-red-100">Delete</button>
       </td>
     </tr>`;
-  }).join("") : `<tr><td colspan="6" class="p-6 text-center text-slate-400">কোনো Product নেই।</td></tr>`;
+  }).join("") : `<tr><td colspan="5" class="p-6 text-center text-slate-400">কোনো Product নেই।</td></tr>`;
 
   renderPaginationControls("productManagementPagination", pm.page, pm.totalPages, (newPage) => {
     productMgmtPage = newPage;
@@ -1358,14 +1381,36 @@ function renderCustomers() {
     customerPage = newPage;
     renderCustomers();
   });
+}
 
-  const supplier = document.getElementById("supplierDueList");
-  const dues = getSupplierDues();
-  supplier.innerHTML = dues.length ? dues.map(x => `
-    <div class="border border-l-4 border-l-violet-500 bg-violet-50/30 rounded-lg p-3 flex items-center justify-between">
-      <div class="font-semibold">${escapeHtml(x.brandName)}</div>
-      <div class="${x.due > 0 ? 'text-red-600' : 'text-emerald-600'} font-bold">${x.due > 0 ? '৳ ' + money(x.due) : 'Paid'}</div>
-    </div>`).join("") : `<div class="text-center text-slate-400 py-6">কোনো supplier data নেই।</div>`;
+function renderCashBox() {
+  document.getElementById("cashBalance").textContent = "৳ " + money(db.cashBalance);
+
+  const cl = paginate(db.cashLedger, cashLedgerPage, PAGE_SIZE);
+  cashLedgerPage = cl.page;
+
+  const typeLabel = { sale: "বিক্রি", due_payment: "বকেয়া আদায়", advance_refund: "Advance ফেরত", manual_add: "Cash যোগ", expense: "খরচ" };
+
+  document.getElementById("cashLedgerCards").innerHTML = cl.items.length ? cl.items.map(x => `
+    <div class="p-3 flex items-center justify-between gap-3 ${x.amount >= 0 ? 'border-l-4 border-l-emerald-500 bg-emerald-50/30' : 'border-l-4 border-l-red-500 bg-red-50/30'}">
+      <div class="min-w-0">
+        <div class="text-xs text-slate-400">${new Date(x.date).toLocaleString("en-BD")}</div>
+        <div class="font-medium truncate">${escapeHtml(typeLabel[x.type] || x.type)}${x.note ? ' — ' + escapeHtml(x.note) : ''}</div>
+      </div>
+      <div class="shrink-0 font-bold ${x.amount >= 0 ? 'text-emerald-600' : 'text-red-600'}">${x.amount >= 0 ? '+' : ''}৳ ${money(Math.abs(x.amount))}</div>
+    </div>`).join("") : `<div class="p-6 text-center text-slate-400">এখনো কোনো লেনদেন নেই।</div>`;
+
+  document.getElementById("cashLedgerBody").innerHTML = cl.items.length ? cl.items.map(x => `
+    <tr class="border-t">
+      <td class="p-3">${new Date(x.date).toLocaleString("en-BD")}</td>
+      <td class="p-3">${escapeHtml(typeLabel[x.type] || x.type)}${x.note ? ' — ' + escapeHtml(x.note) : ''}</td>
+      <td class="p-3 text-right font-semibold ${x.amount >= 0 ? 'text-emerald-600' : 'text-red-600'}">${x.amount >= 0 ? '+' : ''}৳ ${money(Math.abs(x.amount))}</td>
+    </tr>`).join("") : `<tr><td colspan="3" class="p-8 text-center text-slate-400">এখনো কোনো লেনদেন নেই।</td></tr>`;
+
+  renderPaginationControls("cashLedgerPagination", cl.page, cl.totalPages, (newPage) => {
+    cashLedgerPage = newPage;
+    renderCashBox();
+  });
 }
 
 function render() {
@@ -1375,6 +1420,8 @@ function render() {
     return d.toDateString() === now.toDateString();
   }).reduce((sum, s) => sum + Number(s.total || 0), 0);
   document.getElementById("dailySales").textContent = "৳ " + money(dailySales);
+
+  renderCashBox();
 
   renderManagement();
 
@@ -1397,7 +1444,7 @@ function render() {
         <div class="text-xs text-slate-500">${escapeHtml(b?.name || "—")}</div>
         <div class="text-xs mt-1">
           <span class="font-semibold ${low ? 'text-red-600' : ''}">${p.stock.toLocaleString("en-BD")} kg</span>
-          <span class="text-slate-400"> · ক্রয় ৳${money(p.buyPrice)} · বিক্রয় ৳${money(p.sellPrice)}</span>
+          <span class="text-slate-400"> · বিক্রয় ৳${money(p.sellPrice)}</span>
         </div>
         ${bagLabel ? `<div class="text-xs text-slate-400">${bagLabel}</div>` : ""}
       </div>
@@ -1412,11 +1459,10 @@ function render() {
       <td class="p-2 sm:p-3 font-medium">${escapeHtml(p.name)}</td>
       <td class="p-2 sm:p-3">${escapeHtml(b?.name || "—")}</td>
       <td class="p-2 sm:p-3 text-right font-semibold ${p.stock < 500 ? 'text-red-600' : ''}">${p.stock.toLocaleString("en-BD")} kg${bagLabel ? `<div class="text-xs text-slate-400 font-normal">${bagLabel}</div>` : ""}</td>
-      <td class="p-2 sm:p-3 text-right">৳ ${money(p.buyPrice)}</td>
       <td class="p-2 sm:p-3 text-right">৳ ${money(p.sellPrice)}</td>
       <td class="p-2 sm:p-3 text-center"><button type="button" onclick="quickSell('${p.id}')" class="px-3 py-1.5 rounded-lg bg-blue-50 text-blue-700 text-xs font-semibold hover:bg-blue-100">Sell</button></td>
     </tr>`;
-  }).join("") : `<tr><td colspan="6" class="p-8 text-center text-slate-400">কোনো product পাওয়া যায়নি। + Product দিয়ে যোগ করুন।</td></tr>`;
+  }).join("") : `<tr><td colspan="5" class="p-8 text-center text-slate-400">কোনো product পাওয়া যায়নি। + Product দিয়ে যোগ করুন।</td></tr>`;
 
   renderPaginationControls("inventoryPagination", inv.page, inv.totalPages, (newPage) => {
     inventoryPage = newPage;
@@ -1527,11 +1573,11 @@ document.getElementById("brandSectionAdd").onclick = addBrand;
 document.getElementById("addProductBtn").onclick = addProduct;
 document.getElementById("productSectionAdd").onclick = addProduct;
 document.getElementById("purchaseBtn").onclick = addPurchase;
-document.getElementById("supplierPaymentBtn").onclick = paySupplier;
-document.getElementById("supplierDueBtn").onclick = paySupplier;
 document.getElementById("sellBtn").onclick = sellProduct;
 document.getElementById("addCustomerBtn").onclick = addCustomer;
 document.getElementById("customerPaymentBtn").onclick = () => payCustomerDue();
+document.getElementById("addCashBtn").onclick = addManualCash;
+document.getElementById("addExpenseBtn").onclick = addExpense;
 document.getElementById("search").oninput = () => { inventoryPage = 1; render(); };
 document.getElementById("customerDueFilter").onchange = () => { customerPage = 1; renderCustomers(); };
 document.getElementById("footerResetBtn").onclick = resetAllData;
@@ -1539,7 +1585,7 @@ document.getElementById("syncNowBtn").onclick = manualSync;
 document.getElementById("footerLockBtn").onclick = () => lockApp("Password দিয়ে আবার Login করুন।");
 document.getElementById("footerChangePwBtn").onclick = changePassword;
 
-// রোজকার কাজে যেগুলো বারবার দেখার দরকার নেই (Product/Brand Management, Recent Returns) —
+// রোজকার কাজে যেগুলো বারবার দেখার দরকার নেই (Product/Brand Management, Recent Returns, Cash History) —
 // সেগুলো ভাঁজ করা থাকবে, চাইলে বাটনে চেপে খুলে দেখা যাবে।
 function setupCollapsible(toggleBtnId, contentId) {
   const btn = document.getElementById(toggleBtnId);
@@ -1552,6 +1598,7 @@ function setupCollapsible(toggleBtnId, contentId) {
 setupCollapsible("productMgmtToggle", "productMgmtContent");
 setupCollapsible("returnsToggle", "returnsContent");
 setupCollapsible("brandMgmtToggle", "brandMgmtContent");
+setupCollapsible("cashHistoryToggle", "cashHistoryContent");
 
 initAuth(); // password ঠিক থাকলে app শুরু হবে, নাহলে lock screen দেখাবে
 </script>
