@@ -235,6 +235,41 @@
         </div>
       </section>
 
+      <section class="bg-white rounded-xl shadow-sm overflow-hidden">
+        <div class="p-4 border-b flex items-center justify-between gap-3">
+          <div>
+            <h2 class="font-bold text-lg">পুরনো ইতিহাস (Archive)</h2>
+            <p class="text-sm text-slate-500">লিস্ট বড় হয়ে গেলে পুরনো Sale/Return/Cash entry এখানে মাসভিত্তিক জমা থাকে — মোছা হয় না</p>
+          </div>
+          <button id="archiveToggle" type="button" class="px-3 py-2 rounded-lg bg-slate-100 text-slate-600 text-sm hover:bg-slate-200 transition shrink-0">▼ দেখুন</button>
+        </div>
+        <div id="archiveContent" class="hidden p-4 space-y-3">
+          <div class="flex flex-wrap gap-2 items-end">
+            <label class="block text-sm">
+              <span class="text-slate-500">ধরন</span>
+              <select id="archiveType" class="mt-1 border rounded-lg px-2 py-1.5 block">
+                <option value="sales">Sales</option>
+                <option value="returns">Returns</option>
+                <option value="cashLedger">Cash History</option>
+                <option value="customerPayments">Customer Payments</option>
+              </select>
+            </label>
+            <label class="block text-sm">
+              <span class="text-slate-500">মাস</span>
+              <input id="archiveMonth" type="month" class="mt-1 border rounded-lg px-2 py-1.5 block" />
+            </label>
+            <button id="archiveLoadBtn" type="button" class="px-3 py-1.5 rounded-lg bg-slate-800 text-white text-sm hover:bg-slate-700">লোড করুন</button>
+            <button id="archiveCsvBtn" type="button" class="px-3 py-1.5 rounded-lg bg-emerald-600 text-white text-sm hover:bg-emerald-500 hidden">CSV Download</button>
+          </div>
+          <div id="archiveStatus" class="text-sm text-slate-400"></div>
+          <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+              <tbody id="archiveBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
       <section class="grid grid-cols-1">
         <div class="bg-white rounded-xl shadow-sm overflow-hidden">
           <div class="p-4 border-b flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
@@ -281,6 +316,7 @@ const KEY = "rice_arat_pos_v1";
 const API_URL = "/.netlify/functions/data";
 const AUTH_URL = "/.netlify/functions/auth";
 const PASSWORD_KEY = "rice_arat_pos_v1_pw";
+const PENDING_KEY = "rice_arat_pos_v1_pending"; // "1" মানে এই device-এর কিছু change এখনো Cloud-এ confirm হয়নি
 const POLL_INTERVAL_MS = 20 * 1000; // অন্য device-এর changes এই সময় পরপর check হবে
 
 let sessionPassword = localStorage.getItem(PASSWORD_KEY) || "";
@@ -357,22 +393,46 @@ async function pushRemoteData(data) {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ password: sessionPassword, data }),
+      keepalive: true, // tab বন্ধ করে ফেললেও (যেমন দিনশেষে শেষ বিক্রি দিয়েই বাসায় চলে যাওয়া)
+                        // browser এই request-টা background-এ শেষ করার চেষ্টা চালিয়ে যাবে
     });
     if (res.status === 401) {
       setSyncStatus("error", "⚠️ Password ঠিক নেই — আবার Login করুন");
       return false;
     }
     if (!res.ok) throw new Error("push failed: " + res.status);
+    localStorage.setItem(PENDING_KEY, "0");
     setSyncStatus("ok", "✅ Sync হয়েছে — " + new Date().toLocaleTimeString("en-BD"));
     return true;
   } catch (err) {
-    setSyncStatus("error", "⚠️ Sync ব্যর্থ — Internet চেক করুন (data এই device-এ local-ভাবে সেভ আছে)");
+    setSyncStatus("error", "⚠️ Sync ব্যর্থ — Internet চেক করুন (data এই device-এ local-ভাবে সেভ আছে, হারায়নি)");
     return false;
   }
 }
 
+// এই device-এ এমন কোনো change আছে কিনা যেটা এখনো Cloud-এ confirm হয়নি (push সফল হয়নি)।
+function hasPendingChange() {
+  return localStorage.getItem(PENDING_KEY) === "1";
+}
+
 async function initialCloudSync() {
   setSyncStatus("busy", "Sync হচ্ছে...");
+
+  // এই device-এ আগের কোনো change (যেমন গতকালের শেষ বিক্রি/ক্যাশ) যদি Cloud-এ পৌঁছাতে না পেরে
+  // থাকে (internet সমস্যা / tab তাড়াতাড়ি বন্ধ হয়ে যাওয়া), তাহলে এখন Cloud থেকে টেনে এনে
+  // local-কে ওভাররাইট করা যাবে না — নাহলে ওই না-পাঠানো change-টাই হারিয়ে যাবে (এটাই
+  // "cash box পরদিন কমে যাওয়া" সমস্যার আসল কারণ ছিল)। আগে local data-টাই আবার Cloud-এ
+  // পাঠানোর চেষ্টা করা হবে।
+  if (hasPendingChange()) {
+    const pushed = await pushRemoteData(db);
+    if (pushed) {
+      setSyncStatus("ok", "✅ আগের Sync না-হওয়া change এখন Cloud-এ গেছে — " + new Date().toLocaleTimeString("en-BD"));
+    } else {
+      setSyncStatus("error", "⚠️ গতবারের কিছু change এখনো Cloud-এ যায়নি — Internet চেক করে \"এখনই Sync করুন\" চাপুন");
+    }
+    return;
+  }
+
   const remote = await fetchRemoteData();
   if (remote && remote.__authError) {
     lockApp("Password পরিবর্তন হয়ে গেছে — আবার Login করুন।");
@@ -402,6 +462,15 @@ async function initialCloudSync() {
 async function pollRemoteData() {
   if (syncing) return;
   syncing = true;
+
+  // এখানেও একই নিয়ম: local-এ Sync-না-হওয়া change থাকলে সেটা আগে Cloud-এ পাঠানোর চেষ্টা
+  // হবে, Cloud থেকে টেনে এনে local overwrite করা হবে না।
+  if (hasPendingChange()) {
+    await pushRemoteData(db);
+    syncing = false;
+    return;
+  }
+
   const remote = await fetchRemoteData();
   syncing = false;
   if (remote && remote.__authError) {
@@ -430,25 +499,79 @@ function manualSync() {
   pushRemoteData(db);
 }
 
+// Tab বন্ধ হওয়ার মুহূর্তে (দিনশেষে শেষ বিক্রি করেই বাসায় চলে যাওয়ার মতো ক্ষেত্রে) শেষ চেষ্টা
+// হিসেবে sendBeacon দিয়ে data পাঠানো — এটা fetch-এর চেয়েও বেশি নিশ্চিতভাবে browser পাঠিয়ে দেয়
+// tab বন্ধ হয়ে যাওয়ার সময়েও।
+window.addEventListener("pagehide", () => {
+  if (hasPendingChange()) {
+    try {
+      navigator.sendBeacon(
+        API_URL,
+        new Blob([JSON.stringify({ password: sessionPassword, data: db })], { type: "application/json" })
+      );
+    } catch (err) { /* best-effort — না হলেও পরেরবার app খুললেই আবার চেষ্টা হবে */ }
+  }
+});
+
 // MongoDB-এর একটা single document-এর সর্বোচ্চ সাইজ 16MB — sales/returns/cash-history
-// অসীম বেড়ে চললে একদিন সেই সীমা ছাড়িয়ে যাবে (Atlas-এর 500MB মোট storage-এর অনেক আগেই)
-// এবং তখন site পুরোপুরি save/load বন্ধ হয়ে যাবে। তাই lifetime history না রেখে সবসময়
-// সাম্প্রতিক কিছু entry-ই রাখা হয় — পুরনোগুলো নিজে থেকেই ঝরে যায়, আলাদা করে কিছু করতে হয় না।
+// অসীম বেড়ে চললে একদিন সেই সীমা ছাড়িয়ে যাবে। তাই এই সংখ্যার বেশি হয়ে গেলে পুরনো entry
+// main document থেকে সরিয়ে ফেলা হয় — কিন্তু এখন আর মুছে ফেলা হয় না, বরং Cloud-এর আলাদা
+// "shop_archive" collection-এ মাস-ভিত্তিক জমা রাখা হয় (নিচের "পুরনো ইতিহাস" অংশ থেকে
+// পরে দেখা/CSV করে নেওয়া যাবে)। এতে main document সবসময় ছোট-ও-দ্রুত থাকে, অথচ কোনো
+// হিসাব চিরতরে হারায় না।
 const HISTORY_LIMITS = { sales: 500, returns: 300, cashLedger: 500, customerPayments: 500 };
 
+function monthKeyOf(dateStr) {
+  return (dateStr || new Date().toISOString()).slice(0, 7); // "2026-09" আকারে
+}
+
+async function archiveOverflowItems(type, items) {
+  const buckets = {};
+  for (const it of items) (buckets[monthKeyOf(it.date)] ||= []).push(it);
+  for (const month of Object.keys(buckets)) {
+    try {
+      await fetch(API_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ password: sessionPassword, archive: { type, month, items: buckets[month] } }),
+      });
+    } catch (err) {
+      // ব্যর্থ হলেও ক্ষতি নেই — entry-গুলো এখনো main db.<type>Overflow-এ pending আছে,
+      // পরের save()-এ trimHistory আবার চেষ্টা করবে (নিচের catch দ্রষ্টব্য)।
+    }
+  }
+}
+
 function trimHistory(d) {
-  if (d.sales.length > HISTORY_LIMITS.sales) d.sales = d.sales.slice(0, HISTORY_LIMITS.sales);
-  if (d.returns.length > HISTORY_LIMITS.returns) d.returns = d.returns.slice(0, HISTORY_LIMITS.returns);
-  if (d.cashLedger.length > HISTORY_LIMITS.cashLedger) d.cashLedger = d.cashLedger.slice(0, HISTORY_LIMITS.cashLedger);
-  if (d.customerPayments.length > HISTORY_LIMITS.customerPayments) d.customerPayments = d.customerPayments.slice(0, HISTORY_LIMITS.customerPayments);
+  const types = ["sales", "returns", "cashLedger", "customerPayments"];
+  for (const type of types) {
+    const limit = HISTORY_LIMITS[type];
+    if (d[type].length > limit) {
+      const overflow = d[type].splice(limit); // পুরনোগুলো (array-এর শেষ দিকে থাকে) কেটে নেওয়া
+      archiveOverflowItems(type, overflow); // fire-and-forget — Cloud-এর archive-এ জমা হবে
+    }
+  }
   return d;
 }
 
 function save() {
   trimHistory(db);
   localStorage.setItem(KEY, JSON.stringify(db));
+  localStorage.setItem(PENDING_KEY, "1"); // এই change এখনো Cloud-এ confirm হয়নি
   render();
-  pushRemoteData(db);
+  pushWithRetry();
+}
+
+// push ব্যর্থ হলে শুধু পরের ২০ সেকেন্ডের poll-এর অপেক্ষা না করে কিছুক্ষণ পরপর নিজে থেকেই
+// আবার চেষ্টা করবে (কয়েকবার), যাতে সাময়িক internet সমস্যা দ্রুত ঠিক হয়ে গেলে সাথে সাথেই
+// Sync হয়ে যায়।
+let retryTimer = null;
+async function pushWithRetry(attempt = 1) {
+  clearTimeout(retryTimer);
+  const ok = await pushRemoteData(db);
+  if (!ok && attempt <= 5) {
+    retryTimer = setTimeout(() => pushWithRetry(attempt + 1), Math.min(attempt * 4000, 20000));
+  }
 }
 
 /* ---------- ACCESS PASSWORD (lock screen) ---------- */
@@ -1602,6 +1725,60 @@ setupCollapsible("productMgmtToggle", "productMgmtContent");
 setupCollapsible("returnsToggle", "returnsContent");
 setupCollapsible("brandMgmtToggle", "brandMgmtContent");
 setupCollapsible("cashHistoryToggle", "cashHistoryContent");
+setupCollapsible("archiveToggle", "archiveContent");
+
+/* ---------- ARCHIVE VIEWER (পুরনো, main document থেকে সরে যাওয়া history) ---------- */
+let lastArchiveItems = [];
+let lastArchiveType = "";
+
+async function loadArchive() {
+  const type = document.getElementById("archiveType").value;
+  const month = document.getElementById("archiveMonth").value; // "YYYY-MM"
+  const status = document.getElementById("archiveStatus");
+  const body = document.getElementById("archiveBody");
+  const csvBtn = document.getElementById("archiveCsvBtn");
+  if (!month) { status.textContent = "আগে একটা মাস বেছে নিন।"; return; }
+  status.textContent = "লোড হচ্ছে...";
+  body.innerHTML = "";
+  csvBtn.classList.add("hidden");
+  try {
+    const res = await fetch(`${API_URL}?password=${encodeURIComponent(sessionPassword)}&archiveType=${type}&month=${month}`);
+    if (!res.ok) throw new Error("failed");
+    const items = await res.json();
+    lastArchiveItems = items || [];
+    lastArchiveType = type;
+    if (!items || !items.length) {
+      status.textContent = "এই মাসে কোনো archived entry নেই।";
+      return;
+    }
+    status.textContent = `${items.length}টা entry পাওয়া গেছে।`;
+    body.innerHTML = items.map(it => `
+      <tr class="border-t">
+        <td class="p-2 text-slate-500">${new Date(it.date).toLocaleString("en-BD")}</td>
+        <td class="p-2">${escapeHtml(JSON.stringify(it))}</td>
+      </tr>`).join("");
+    csvBtn.classList.remove("hidden");
+  } catch (err) {
+    status.textContent = "⚠️ লোড করা যায়নি — Internet চেক করুন।";
+  }
+}
+
+function downloadArchiveCsv() {
+  if (!lastArchiveItems.length) return;
+  const cols = Array.from(lastArchiveItems.reduce((set, it) => { Object.keys(it).forEach(k => set.add(k)); return set; }, new Set()));
+  const rows = [cols.join(",")].concat(
+    lastArchiveItems.map(it => cols.map(c => `"${String(it[c] ?? "").replace(/"/g, '""')}"`).join(","))
+  );
+  const blob = new Blob([rows.join("\n")], { type: "text/csv" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = `${lastArchiveType}_archive.csv`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+document.getElementById("archiveLoadBtn").onclick = loadArchive;
+document.getElementById("archiveCsvBtn").onclick = downloadArchiveCsv;
 
 initAuth(); // password ঠিক থাকলে app শুরু হবে, নাহলে lock screen দেখাবে
 </script>

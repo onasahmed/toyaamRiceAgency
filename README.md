@@ -46,20 +46,49 @@ Advance ফেরত দিলে বা "− খরচ" দিয়ে কো�
 Purchase/Restock-এ এখন আর ক্রয়মূল্য বা Supplier Due হিসাব করা হয় না — শুধু Inventory-তে stock
 (kg) যোগ হয়। Supplier-কে কত টাকা দেওয়া বাকি সেটা এই app-এর বাইরে হিসাব রাখতে হবে।
 
-## Data আকার নিয়ন্ত্রণ (MongoDB 16MB single-document সীমা)
-পুরো `db` একটাই MongoDB document হিসেবে save হয় — আর প্রতিটা MongoDB document-এর সর্বোচ্চ সাইজ
-**16MB** (এটা Atlas-এর 500MB মোট storage সীমার চেয়ে অনেক আগেই আসতে পারে, যদি sales/returns/cash
-history অসীম বাড়তে থাকে)। এজন্য `save()`-এর ভেতর automatic trimming বসানো আছে — প্রতিবার save
-হওয়ার সময় পুরনো entry স্বয়ংক্রিয়ভাবে বাদ পড়ে যায়:
+## Data আকার নিয়ন্ত্রণ (MongoDB 16MB single-document সীমা) — এখন কিছুই মোছা হয় না
+পুরো live `db` একটাই MongoDB document (`shop_data`) হিসেবে save হয়, আর প্রতিটা MongoDB
+document-এর সর্বোচ্চ সাইজ **16MB**। sales/returns/cash-history অসীম বাড়তে থাকলে একদিন এই
+document বড় হয়ে যেত এবং site slow/broken হয়ে যেত — তাই `save()`-এর ভেতর automatic trimming আছে:
 
-- Sales: সাম্প্রতিক ৫০০টা রাখা হয়
-- Returns: সাম্প্রতিক ৩০০টা রাখা হয়
-- Cash History: সাম্প্রতিক ৫০০টা রাখা হয়
-- Customer Payments (internal log): সাম্প্রতিক ৫০০টা রাখা হয়
+- Sales: সাম্প্রতিক ৫০০টা মূল document-এ থাকে
+- Returns: সাম্প্রতিক ৩০০টা
+- Cash History: সাম্প্রতিক ৫০০টা
+- Customer Payments (internal log): সাম্প্রতিক ৫০০টা
 
-এই সংখ্যাগুলো `public/index.html`-এ `HISTORY_LIMITS` নামের একটা constant-এ আছে — দরকার হলে
-বাড়িয়ে/কমিয়ে নেওয়া যাবে। Brand/Product/Customer তালিকা trim হয় না (এগুলো সাধারণত সীমিত
-সংখ্যক থাকে বলে সমস্যা করে না)।
+**আগে limit ছাড়িয়ে গেলে পুরনো entry পুরোপুরি মুছে যেত। এখন আর মুছে যায় না** — trim হওয়ার
+সময় সেই entry-গুলো Cloud-এর আলাদা `shop_archive` collection-এ মাস-ভিত্তিক document-এ
+(`sales_2026-09` এই রকম `_id`) জমা হয়ে যায়। App-এর "পুরনো ইতিহাস (Archive)" অংশ থেকে
+মাস/ধরন বেছে সেই data দেখা এবং CSV হিসেবে download করা যায়। এতে main document সবসময়
+ছোট ও দ্রুত থাকে, অথচ বছরের পর বছরের হিসাব হারায় না।
+
+এই সংখ্যাগুলো `public/index.html`-এ `HISTORY_LIMITS` constant-এ আছে। Brand/Product/Customer
+তালিকা trim হয় না (এগুলো সাধারণত সীমিত সংখ্যক থাকে বলে সমস্যা করে না)।
+
+### একা (single user), বছরের পর বছর ব্যবহারে কতদিন চলবে?
+- একটা rice arat-এর দিনে ৫০-১০০টা sale ধরলেও বছরে ~৩৫,০০০টার মতো sale entry হয়; প্রতিটা
+  entry মোটামুটি ২০০-৩০০ byte — তাতে বছরে ~৮-১০MB, ১০ বছরেও ~১০০MB-এর আশেপাশে।
+- Archive collection-এ MongoDB Atlas-এর ফ্রি M0 cluster-এ **৫১২MB** পর্যন্ত জায়গা থাকে —
+  একা ব্যবহারকারীর জন্য এই হিসেবে বহু বছর চলার কথা।
+- Site-এর speed মূলত নির্ভর করে "live" document-এর সাইজের ওপর, যেটা এখন সবসময় ছোট থাকবে
+  (৫০০-এর বেশি sale কখনো main document-এ জমা হবে না) — তাই বছরের পর বছর data জমলেও app
+  slow হবে না; পুরনো history দেখতে চাইলে শুধু তখনই Archive থেকে আলাদাভাবে লোড হবে।
+
+## Git push করলে কি পুরনো data হারিয়ে যায়?
+**না।** Data MongoDB Atlas-এ থাকে, GitHub repo-তে না — `git push` শুধু `public/index.html` ও
+`netlify/functions/*.js` কোড আপডেট করে, database-এর কোনো ডকুমেন্ট এতে touch হয় না। `MONGODB_URI`
+environment variable Netlify-এর dashboard-এ (Site settings → Environment variables) সেট করা
+থাকে, যেটা কোড push/redeploy-তে মুছে যায় না — শুধু ওই variable যেন কখনো ভুলে delete/change না
+হয়, সেটা খেয়াল রাখলেই যথেষ্ট।
+
+## Cash Box সিঙ্ক নিয়ে একটা সমস্যা ঠিক করা হয়েছে
+আগে দিনশেষে শেষ sale/cash entry করার পর যদি সাথে সাথে ট্যাব/ব্রাউজার বন্ধ করে ফেলা হতো,
+তাহলে Cloud-এ push হওয়ার আগেই connection কেটে যেত — এবং পরদিন app খুললে Cloud-এর পুরনো
+(অসম্পূর্ণ) data দিয়ে local-কে ওভাররাইট করে ফেলত, ফলে cash box-এর শেষ হিসাব হারিয়ে
+"কমে যাওয়া/শূন্য হয়ে যাওয়া" মনে হতো। এখন প্রতিটা change একটা "pending" flag দিয়ে ট্র্যাক
+করা হয়: যতক্ষণ না Cloud থেকে push সফল হওয়ার নিশ্চয়তা পাওয়া যায়, ততক্ষণ Cloud থেকে টেনে
+এনে local data ওভাররাইট করা হয় না — বরং আগে সেই বাকি থাকা change-টাই আবার পাঠানোর চেষ্টা
+হয় (retry + `keepalive` + tab বন্ধ হওয়ার মুহূর্তে `sendBeacon` দিয়ে শেষ চেষ্টা)।
 
 ## ফাইল গঠন
 ```
