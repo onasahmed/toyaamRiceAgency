@@ -8,6 +8,60 @@
   <style>
     body { font-family: Arial, sans-serif; }
     .modal-backdrop { background: rgba(15, 23, 42, .55); }
+
+    /* ---------- Searchable dropdown (browser-এর সাধারণ <select> এর বদলে) ---------- */
+    .cb { position: relative; margin-top: .25rem; }
+    .cb [hidden] { display: none !important; }
+    .cb-trigger { width: 100%; display: flex; align-items: center; gap: .65rem; text-align: left; background: #fff;
+      border: 1px solid #cbd5e1; border-radius: .75rem; padding: .5rem .75rem; min-height: 2.9rem; cursor: pointer;
+      transition: border-color .15s, box-shadow .15s; }
+    .cb-trigger:hover { border-color: #94a3b8; }
+    .cb-trigger:focus-visible, .cb.is-open .cb-trigger { outline: none; border-color: #2563eb; box-shadow: 0 0 0 3px rgba(37, 99, 235, .18); }
+    .cb-placeholder { flex: 1; color: #94a3b8; }
+    .cb-chevron { margin-left: auto; flex: none; width: 1.1rem; height: 1.1rem; color: #64748b; transition: transform .15s; }
+    .cb.is-open .cb-chevron { transform: rotate(180deg); }
+    .cb-panel { position: absolute; z-index: 30; left: 0; right: 0; top: calc(100% + .4rem); border: 1px solid #e2e8f0; border-radius: .9rem; background: #fff;
+      box-shadow: 0 10px 28px -10px rgba(15, 23, 42, .3); overflow: hidden; }
+    .cb-search { display: flex; align-items: center; gap: .55rem; padding: .6rem .8rem; border-bottom: 1px solid #e2e8f0; background: #f8fafc; }
+    .cb-search svg { flex: none; width: 1rem; height: 1rem; color: #64748b; }
+    .cb-search input { flex: 1; min-width: 0; border: 0; outline: 0; background: transparent; font-size: 1rem; padding: .1rem 0; }
+    .cb-list { max-height: 16rem; overflow-y: auto; overscroll-behavior: contain; margin: 0; padding: .3rem; list-style: none; }
+    .cb-item { display: flex; align-items: center; gap: .7rem; padding: .5rem .6rem; border-radius: .65rem; cursor: pointer; }
+    .cb-item.is-active { background: #f1f5f9; }
+    .cb-item.is-selected { background: #eff6ff; }
+    .cb-item.is-pinned { margin-bottom: .25rem; border: 1px dashed #cbd5e1; }
+    .cb-avatar { flex: none; display: grid; place-items: center; width: 2.25rem; height: 2.25rem; border-radius: 999px; font-weight: 700; font-size: .9rem; }
+    .cb-trigger .cb-avatar { width: 2rem; height: 2rem; font-size: .85rem; }
+    .cb-avatar.tone-teal { background: #ccfbf1; color: #115e59; }
+    .cb-avatar.tone-amber { background: #fef3c7; color: #92400e; }
+    .cb-avatar.tone-blue { background: #dbeafe; color: #1e40af; }
+    .cb-avatar.tone-slate { background: #e2e8f0; color: #334155; }
+    .cb-avatar.tone-ink { background: #1e293b; color: #fff; font-size: 1.15rem; }
+    .cb-main { flex: 1; min-width: 0; }
+    .cb-label, .cb-sub { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .cb-label { font-weight: 600; font-size: .95rem; line-height: 1.3; }
+    .cb-sub { font-size: .8rem; color: #64748b; line-height: 1.3; }
+    .cb-badge { flex: none; font-size: .72rem; font-weight: 700; padding: .2rem .55rem; border-radius: 999px; white-space: nowrap; }
+    .cb-badge.due { background: #fef2f2; color: #b91c1c; }
+    .cb-badge.advance { background: #eff6ff; color: #1d4ed8; }
+    .cb-badge.stock { background: #f1f5f9; color: #475569; }
+    .cb-badge.low { background: #fffbeb; color: #b45309; }
+    .cb-check { flex: none; width: 1.1rem; height: 1.1rem; color: #2563eb; }
+    .cb-empty { padding: 1rem; text-align: center; color: #94a3b8; font-size: .9rem; list-style: none; }
+    .cb-more { padding: .5rem; text-align: center; color: #94a3b8; font-size: .75rem; list-style: none; }
+    .cb mark { background: #fde68a; color: inherit; border-radius: .2rem; padding: 0 .05rem; }
+
+    /* Customer list-এর filter pill ও search box */
+    .cb-pills { display: inline-flex; gap: .15rem; padding: .2rem; background: #f1f5f9; border-radius: .8rem; align-self: flex-start; }
+    .cb-pills button { padding: .4rem .85rem; border-radius: .6rem; font-size: .85rem; font-weight: 600; color: #475569; white-space: nowrap; }
+    .cb-pills button.is-on { background: #fff; color: #0f172a; box-shadow: 0 1px 2px rgba(15, 23, 42, .15); }
+    .cb-searchbox { display: flex; align-items: center; gap: .6rem; padding: .55rem .85rem; border: 1px solid #cbd5e1; border-radius: .8rem; background: #fff; }
+    .cb-searchbox:focus-within { border-color: #2563eb; box-shadow: 0 0 0 3px rgba(37, 99, 235, .18); }
+    .cb-searchbox svg { flex: none; width: 1.1rem; height: 1.1rem; color: #64748b; }
+    .cb-searchbox input { flex: 1; min-width: 0; border: 0; outline: 0; background: transparent; font-size: 1rem; }
+    .cb-searchbox button { flex: none; font-size: 1.4rem; line-height: 1; color: #94a3b8; }
+    .cb-searchbox button:hover { color: #334155; }
+    @media (prefers-reduced-motion: reduce) { .cb-trigger, .cb-chevron { transition: none; } }
   </style>
 </head>
 <body class="bg-slate-100 text-slate-800">
@@ -245,15 +299,10 @@
         </div>
         <div id="archiveContent" class="hidden p-4 space-y-3">
           <div class="flex flex-wrap gap-2 items-end">
-            <label class="block text-sm">
+            <div class="block text-sm">
               <span class="text-slate-500">ধরন</span>
-              <select id="archiveType" class="mt-1 border rounded-lg px-2 py-1.5 block">
-                <option value="sales">Sales</option>
-                <option value="returns">Returns</option>
-                <option value="cashLedger">Cash History</option>
-                <option value="customerPayments">Customer Payments</option>
-              </select>
-            </label>
+              <div id="archiveTypeHost" class="w-56"></div>
+            </div>
             <label class="block text-sm">
               <span class="text-slate-500">মাস</span>
               <input id="archiveMonth" type="month" class="mt-1 border rounded-lg px-2 py-1.5 block" />
@@ -277,11 +326,19 @@
               <h2 class="font-bold text-lg">Customer Due</h2>
               <p class="text-sm text-slate-500">Customer-এর phone ও বকেয়া দেখে filter করুন</p>
             </div>
-            <select id="customerDueFilter" class="border rounded-lg px-3 py-2 text-sm">
-              <option value="all">সব Customer</option>
-              <option value="due">শুধু Due আছে</option>
-              <option value="paid">Due নেই</option>
-            </select>
+            <div id="customerDueFilter" class="cb-pills" role="group" aria-label="Customer filter">
+              <button type="button" data-filter="all" class="is-on">সব</button>
+              <button type="button" data-filter="due">Due আছে</button>
+              <button type="button" data-filter="paid">Due নেই</button>
+            </div>
+          </div>
+          <div class="px-4 pt-4">
+            <label class="cb-searchbox">
+              <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="9" cy="9" r="5.5"/><path d="M13.5 13.5 17 17"/></svg>
+              <input id="customerSearch" type="text" inputmode="search" autocomplete="off" placeholder="নাম বা Phone নম্বর দিয়ে খুঁজুন" />
+              <button type="button" id="customerSearchClear" hidden aria-label="মুছুন">&times;</button>
+            </label>
+            <p id="customerCount" class="text-xs text-slate-400 mt-2"></p>
           </div>
           <div class="p-4 space-y-2" id="customerList"></div>
           <div id="customerPagination"></div>
@@ -782,6 +839,238 @@ function bagBreakdownLabel(stockKg, sackSize) {
   return parts.join(" + ");
 }
 
+/* ---------- SEARCHABLE DROPDOWN ---------- */
+// browser-এর সাধারণ <select> এর বদলে — নাম/Phone/Brand লিখে খোঁজা যায়, সুন্দর card-এর মতো দেখায়।
+// ভেতরে একটা hidden <input> থাকে (একই id/name), তাই .value পড়া, FormData, "change" event — সব আগের মতোই কাজ করে।
+
+const BN_DIGITS = "০১২৩৪৫৬৭৮৯";
+// বাংলা সংখ্যা → ইংরেজি, ছোট হাতের অক্ষর, space/dash বাদ — যাতে "০১৭১২" লিখলেও "01712" মিলে যায়
+function normSearch(s) {
+  return String(s ?? "").toLowerCase()
+    .replace(/[০-৯]/g, d => BN_DIGITS.indexOf(d))
+    .replace(/[\s\-+().]/g, "");
+}
+
+function highlightText(text, query) {
+  const t = String(text ?? "");
+  const q = String(query || "").trim();
+  if (!q) return escapeHtml(t);
+  const i = t.toLowerCase().indexOf(q.toLowerCase());
+  if (i < 0) return escapeHtml(t);
+  return escapeHtml(t.slice(0, i)) + "<mark>" + escapeHtml(t.slice(i, i + q.length)) + "</mark>" + escapeHtml(t.slice(i + q.length));
+}
+
+const CB_CHEVRON = `<svg class="cb-chevron" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 7.5 5 5 5-5"/></svg>`;
+const CB_SEARCH_ICON = `<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="9" cy="9" r="5.5"/><path d="M13.5 13.5 17 17"/></svg>`;
+const CB_CHECK = `<svg class="cb-check" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4.5 10.5 3.5 3.5 7.5-8"/></svg>`;
+const CB_MAX_ROWS = 80;
+
+// বাইরে click করলে dropdown বন্ধ হবে — "চাপ দেওয়ার মুহূর্তে" নয়, click শেষ হওয়ার পরে বন্ধ করা হয়,
+// যাতে dropdown গুটিয়ে গিয়ে layout নড়ে গেলেও যে বাটনে চাপা হয়েছিল (যেমন ×, Save) সেটা ঠিকই কাজ করে।
+let openComboCloser = null;
+document.addEventListener("click", (e) => {
+  if (openComboCloser && !e.target.closest(".cb")) openComboCloser();
+});
+
+// item = { value, label, sub, badge:{text,cls}, tone, avatar, pinned, search }
+// opts = { id, name, items, value, placeholder, searchPlaceholder, emptyText, searchable, searchThreshold, onPinnedPick }
+function createCombo(host, opts = {}) {
+  if (typeof host === "string") host = document.getElementById(host);
+  if (!host) return null;
+
+  let items = opts.items || [];
+  let query = "";
+  let visible = [];
+  let active = 0;
+  let isOpen = false;
+  const threshold = opts.searchThreshold ?? 7;
+
+  const root = document.createElement("div");
+  root.className = "cb";
+  root.innerHTML = `
+    <input type="hidden" ${opts.id ? `id="${opts.id}"` : ""} ${opts.name ? `name="${opts.name}"` : ""} value="">
+    <button type="button" class="cb-trigger" aria-haspopup="listbox" aria-expanded="false"></button>
+    <div class="cb-panel" hidden>
+      <div class="cb-search">${CB_SEARCH_ICON}<input type="text" inputmode="search" autocomplete="off" spellcheck="false" placeholder="${escapeHtml(opts.searchPlaceholder || "খুঁজুন...")}" /></div>
+      <ul class="cb-list" role="listbox"></ul>
+    </div>`;
+  host.replaceChildren(root);
+
+  const hidden = root.querySelector('input[type="hidden"]');
+  const trigger = root.querySelector(".cb-trigger");
+  const panel = root.querySelector(".cb-panel");
+  const searchWrap = root.querySelector(".cb-search");
+  const searchInput = searchWrap.querySelector("input");
+  const list = root.querySelector(".cb-list");
+  hidden.value = opts.value ?? "";
+
+  const itemOf = (v) => items.find(i => String(i.value) === String(v));
+  const isSearchable = () => !!opts.searchable || items.length >= threshold;
+
+  function rowHtml(it, q, selected) {
+    const av = it.avatar ?? (Array.from(String(it.label || "").trim())[0] || "?");
+    const badge = it.badge ? `<span class="cb-badge ${it.badge.cls || ""}">${escapeHtml(it.badge.text)}</span>` : "";
+    const sub = it.sub ? `<span class="cb-sub">${q === null ? escapeHtml(it.sub) : highlightText(it.sub, q)}</span>` : "";
+    return `<span class="cb-avatar tone-${it.tone || "slate"}">${escapeHtml(av)}</span>
+      <span class="cb-main"><span class="cb-label">${q === null ? escapeHtml(it.label) : highlightText(it.label, q)}</span>${sub}</span>
+      ${badge}${selected ? CB_CHECK : ""}`;
+  }
+
+  function renderTrigger() {
+    const it = itemOf(hidden.value);
+    trigger.innerHTML = (it
+      ? rowHtml(it, null, false)
+      : `<span class="cb-placeholder">${escapeHtml(opts.placeholder || "বেছে নিন")}</span>`) + CB_CHEVRON;
+  }
+
+  function renderList() {
+    const q = normSearch(query);
+    const pinned = items.filter(i => i.pinned);
+    const all = items.filter(i => !i.pinned && (!q || normSearch(i.search ?? (i.label + " " + (i.sub || ""))).includes(q)));
+    const shown = all.slice(0, CB_MAX_ROWS);
+    visible = pinned.concat(shown);
+
+    let html = visible.map((it, idx) => {
+      const sel = String(it.value) === String(hidden.value);
+      return `<li role="option" aria-selected="${sel}" data-i="${idx}" class="cb-item${it.pinned ? " is-pinned" : ""}${sel ? " is-selected" : ""}">${rowHtml(it, query, sel)}</li>`;
+    }).join("");
+    if (!shown.length) html += `<li class="cb-empty">${escapeHtml(opts.emptyText || "কিছু পাওয়া যায়নি")}</li>`;
+    if (all.length > shown.length) html += `<li class="cb-more">আরও ${all.length - shown.length}টি আছে — নাম/নম্বর লিখে খুঁজুন</li>`;
+    list.innerHTML = html;
+
+    // Enter চাপলে যেন সবার উপরের মিলে যাওয়া result-টা বাছা হয় (pinned "নতুন" item নয়)
+    const firstMatch = visible.findIndex(i => !i.pinned);
+    const selIdx = visible.findIndex(i => String(i.value) === String(hidden.value));
+    active = q ? Math.max(firstMatch, 0) : (selIdx >= 0 ? selIdx : Math.max(firstMatch, 0));
+    markActive(false);
+  }
+
+  function markActive(scroll) {
+    list.querySelectorAll(".cb-item").forEach(li => li.classList.toggle("is-active", Number(li.dataset.i) === active));
+    if (scroll) list.querySelector(".cb-item.is-active")?.scrollIntoView({ block: "nearest" });
+  }
+
+  function open() {
+    if (isOpen) return;
+    if (openComboCloser) openComboCloser();
+    isOpen = true;
+    query = "";
+    searchInput.value = "";
+    searchWrap.hidden = !isSearchable();
+    panel.hidden = false;
+    root.classList.add("is-open");
+    trigger.setAttribute("aria-expanded", "true");
+    renderList();
+    openComboCloser = close;
+    list.querySelector(".cb-item.is-selected")?.scrollIntoView({ block: "nearest" });
+    panel.scrollIntoView({ block: "nearest" });
+    if (isSearchable()) searchInput.focus({ preventScroll: true });
+  }
+
+  function close() {
+    if (!isOpen) return;
+    isOpen = false;
+    panel.hidden = true;
+    root.classList.remove("is-open");
+    trigger.setAttribute("aria-expanded", "false");
+    if (openComboCloser === close) openComboCloser = null;
+  }
+
+  function pick(it) {
+    if (!it) return;
+    const typed = query;
+    hidden.value = it.value;
+    renderTrigger();
+    close();
+    hidden.dispatchEvent(new Event("change", { bubbles: true }));
+    if (it.pinned && typed.trim() && opts.onPinnedPick) opts.onPinnedPick(typed);
+  }
+
+  trigger.addEventListener("click", () => (isOpen ? close() : open()));
+  searchInput.addEventListener("input", () => { query = searchInput.value; renderList(); });
+  list.addEventListener("click", (e) => {
+    const li = e.target.closest(".cb-item");
+    if (li) pick(visible[Number(li.dataset.i)]);
+  });
+  list.addEventListener("pointermove", (e) => {
+    const li = e.target.closest(".cb-item");
+    if (li && Number(li.dataset.i) !== active) { active = Number(li.dataset.i); markActive(false); }
+  });
+
+  root.addEventListener("keydown", (e) => {
+    if (!isOpen) {
+      if (e.key === "ArrowDown" && e.target === trigger) { e.preventDefault(); open(); }
+      return;
+    }
+    if (e.key === "ArrowDown") { e.preventDefault(); active = Math.min(active + 1, visible.length - 1); markActive(true); }
+    else if (e.key === "ArrowUp") { e.preventDefault(); active = Math.max(active - 1, 0); markActive(true); }
+    else if (e.key === "Enter") { e.preventDefault(); pick(visible[active]); trigger.focus({ preventScroll: true }); }
+    else if (e.key === "Escape") { e.preventDefault(); e.stopPropagation(); close(); trigger.focus({ preventScroll: true }); }
+    else if (e.key === "Tab") { close(); }
+  });
+
+  // বাইরে থেকে hidden.value বদলে "change" event দিলে (যেমন quickSell) দেখানো লেখাও বদলে যাবে
+  hidden.addEventListener("change", renderTrigger);
+
+  renderTrigger();
+
+  return {
+    setItems(newItems, value) {
+      items = newItems || [];
+      if (value !== undefined) hidden.value = value;
+      else if (!itemOf(hidden.value)) hidden.value = "";
+      renderTrigger();
+      if (isOpen) renderList();
+    },
+    getValue: () => hidden.value,
+    open, close,
+  };
+}
+
+// ---- dropdown-এ দেখানোর item বানানোর helper ----
+function moneyShort(n) {
+  return Number(n || 0).toLocaleString("en-BD", { maximumFractionDigits: 2 });
+}
+
+function customerComboItems({ filter = null, sort = "name", includeNew = false } = {}) {
+  let list = db.customers.filter(filter || (() => true));
+  if (sort === "due") list = list.slice().sort((a, b) => Number(b.due || 0) - Number(a.due || 0));
+  else if (sort === "advance") list = list.slice().sort((a, b) => Number(a.due || 0) - Number(b.due || 0));
+  else list = list.slice().sort((a, b) => String(a.name).localeCompare(String(b.name)));
+
+  const rows = list.map(c => {
+    const due = Number(c.due || 0);
+    return {
+      value: c.id, label: c.name, sub: c.phone, tone: "teal",
+      search: c.name + " " + c.phone,
+      badge: due > 0 ? { text: "Due ৳ " + moneyShort(due), cls: "due" }
+        : due < 0 ? { text: "Advance ৳ " + moneyShort(Math.abs(due)), cls: "advance" } : null,
+    };
+  });
+  if (includeNew) {
+    rows.unshift({ value: "__new__", label: "নতুন Customer", sub: "নাম ও Phone লিখে সরাসরি বিক্রি করুন", avatar: "+", tone: "ink", pinned: true });
+  }
+  return rows;
+}
+
+function productComboItems(list) {
+  return list.map(p => {
+    const b = db.brands.find(x => x.id === p.brandId);
+    return {
+      value: p.id, label: p.name, sub: b?.name || "", tone: "amber",
+      search: p.name + " " + (b?.name || ""),
+      badge: { text: moneyShort(p.stock) + " kg", cls: Number(p.stock) < 500 ? "low" : "stock" },
+    };
+  });
+}
+
+function brandComboItems() {
+  return db.brands.map(b => ({
+    value: b.id, label: b.name, tone: "blue",
+    sub: db.products.filter(p => p.brandId === b.id).length + "টি product",
+  }));
+}
+
 /* ---------- MODAL ---------- */
 
 function openModal(title, html, onSubmit) {
@@ -805,8 +1094,14 @@ function closeModal() {
 }
 
 document.getElementById("closeModal").onclick = closeModal;
+// শুধু backdrop-এ "চাপ শুরু" ও "ছাড়া" দুটোই হলে modal বন্ধ হবে — ভেতরে চাপ দিয়ে বাইরে ছাড়লে
+// (বা dropdown বন্ধ হওয়ার সময় layout নড়ে গেলে) ভুল করে পুরো form বন্ধ হয়ে যাবে না
+let modalPressStartedOnBackdrop = false;
+document.getElementById("modal").addEventListener("pointerdown", (e) => {
+  modalPressStartedOnBackdrop = e.target.id === "modal";
+});
 document.getElementById("modal").onclick = (e) => {
-  if (e.target.id === "modal") closeModal();
+  if (e.target.id === "modal" && modalPressStartedOnBackdrop) closeModal();
 };
 
 // নেটিভ browser confirm() পপআপ-এর বদলে সুন্দর একটা confirm card, একই modal ব্যবহার করে
@@ -828,10 +1123,6 @@ function confirmAction(message, onYes) {
 }
 
 /* ---------- BRAND ---------- */
-
-function brandOptions(selected = "") {
-  return db.brands.map(b => `<option value="${b.id}" ${b.id === selected ? "selected" : ""}>${escapeHtml(b.name)}</option>`).join("");
-}
 
 function addBrand() {
   openModal("নতুন Brand", `
@@ -894,9 +1185,9 @@ function addProduct() {
     <label class="block"><span class="text-sm font-medium">Product Name</span>
       <input name="name" required class="mt-1 w-full border rounded-lg px-3 py-2" placeholder="যেমন: মিনিকেট চাল" />
     </label>
-    <label class="block"><span class="text-sm font-medium">Brand</span>
-      <select name="brandId" required class="mt-1 w-full border rounded-lg px-3 py-2">${brandOptions()}</select>
-    </label>
+    <div class="block"><span class="text-sm font-medium">Brand</span>
+      <div id="productBrandHost"></div>
+    </div>
     <label class="block"><span class="text-sm font-medium">বস্তার সাইজ (kg)</span>
       <input name="sackSize" list="sackSizeList" type="number" min="0" step="0.01" value="25" class="mt-1 w-full border rounded-lg px-3 py-2" />
       <datalist id="sackSizeList">
@@ -932,6 +1223,11 @@ function addProduct() {
     closeModal();
   });
 
+  createCombo("productBrandHost", {
+    name: "brandId", value: db.brands[0]?.id || "", items: brandComboItems(),
+    placeholder: "Brand বেছে নিন", searchPlaceholder: "Brand-এর নাম লিখুন...",
+  });
+
   const sackSizeEl = document.querySelector('#modalForm [name="sackSize"]');
   const sackCountEl = document.querySelector('#modalForm [name="sackCount"]');
   const extraKgEl = document.querySelector('#modalForm [name="extraKg"]');
@@ -950,9 +1246,9 @@ function editProduct(id) {
     <label class="block"><span class="text-sm font-medium">Product Name</span>
       <input name="name" value="${escapeHtml(p.name)}" required class="mt-1 w-full border rounded-lg px-3 py-2" />
     </label>
-    <label class="block"><span class="text-sm font-medium">Brand</span>
-      <select name="brandId" class="mt-1 w-full border rounded-lg px-3 py-2">${brandOptions(p.brandId)}</select>
-    </label>
+    <div class="block"><span class="text-sm font-medium">Brand</span>
+      <div id="productBrandHost"></div>
+    </div>
     <label class="block"><span class="text-sm font-medium">বস্তার সাইজ (kg)</span>
       <input name="sackSize" list="sackSizeList" type="number" min="0" step="0.01" value="${p.sackSize || 25}" class="mt-1 w-full border rounded-lg px-3 py-2" />
       <datalist id="sackSizeList">
@@ -975,10 +1271,10 @@ function editProduct(id) {
     p.sellPrice = Number(fd.get("sellPrice"));
     save(); closeModal();
   });
-  setTimeout(() => {
-    const select = document.querySelector('#modalForm [name="brandId"]');
-    if (select) select.value = p.brandId;
-  }, 20);
+  createCombo("productBrandHost", {
+    name: "brandId", value: p.brandId, items: brandComboItems(),
+    placeholder: "Brand বেছে নিন", searchPlaceholder: "Brand-এর নাম লিখুন...",
+  });
 }
 
 function deleteProduct(id) {
@@ -999,12 +1295,12 @@ function deleteProduct(id) {
 function addPurchase() {
   if (!db.products.length) return alert("আগে Product যোগ করুন।");
   openModal("Stock যোগ করুন (Restock)", `
-    <label class="block"><span class="text-sm font-medium">Brand</span>
-      <select id="purchaseBrandSelect" name="brandId" required class="mt-1 w-full border rounded-lg px-3 py-2">${brandOptions()}</select>
-    </label>
-    <label class="block"><span class="text-sm font-medium">Product</span>
-      <select id="purchaseProductSelect" name="productId" required class="mt-1 w-full border rounded-lg px-3 py-2"></select>
-    </label>
+    <div class="block"><span class="text-sm font-medium">Brand</span>
+      <div id="purchaseBrandHost"></div>
+    </div>
+    <div class="block"><span class="text-sm font-medium">Product</span>
+      <div id="purchaseProductHost"></div>
+    </div>
     <label class="block"><span class="text-sm font-medium">বস্তার সাইজ (kg)</span>
       <input id="purchaseSackSize" name="sackSize" list="sackSizeList" type="number" min="0" step="0.01" value="25" class="mt-1 w-full border rounded-lg px-3 py-2" />
       <datalist id="sackSizeList">
@@ -1030,6 +1326,7 @@ function addPurchase() {
     const extraKg = Number(fd.get("extraKg") || 0);
     const qty = Number((sackCount * sackSize + extraKg).toFixed(2));
     const p = db.products.find(x => x.id === productId);
+    if (!productId) return alert("কোন Product-এ stock যোগ করবেন সেটা বেছে নিন।");
     if (!p) return alert("Product পাওয়া যায়নি — এই Brand-এ কোনো Product নেই, আগে Product যোগ করুন।");
     if (p.brandId !== brandId) return alert("Product ও Brand মিলছে না।");
     if (qty <= 0) return alert("Quantity 0 এর বেশি হতে হবে — বস্তা সংখ্যা বা অতিরিক্ত kg দিন।");
@@ -1038,6 +1335,16 @@ function addPurchase() {
     save(); closeModal();
   });
 
+  // Product dropdown আগে বানাতে হবে, কারণ Brand বদলালে সেটার list নতুন করে সাজাতে হয়
+  const purchaseProductCombo = createCombo("purchaseProductHost", {
+    id: "purchaseProductSelect", name: "productId", value: "", items: [],
+    placeholder: "Product বেছে নিন", searchPlaceholder: "Product-এর নাম লিখুন...",
+    emptyText: "এই Brand-এ কোনো Product নেই",
+  });
+  createCombo("purchaseBrandHost", {
+    id: "purchaseBrandSelect", name: "brandId", value: db.brands[0]?.id || "", items: brandComboItems(),
+    placeholder: "Brand বেছে নিন", searchPlaceholder: "Brand-এর নাম লিখুন...",
+  });
   const brandSelect = document.getElementById("purchaseBrandSelect");
   const productSelect = document.getElementById("purchaseProductSelect");
   const sackSizeEl = document.getElementById("purchaseSackSize");
@@ -1056,9 +1363,8 @@ function addPurchase() {
   // Brand বেছে নিলে শুধু সেই Brand-এর Product-ই দেখাবে — 100+ Product থাকলে এতে খোঁজা সহজ হবে
   function populateProductsForBrand() {
     const filtered = db.products.filter(p => p.brandId === brandSelect.value);
-    productSelect.innerHTML = filtered.length
-      ? filtered.map(p => `<option value="${p.id}">${escapeHtml(p.name)}</option>`).join("")
-      : `<option value="" disabled selected>এই Brand-এ কোনো Product নেই</option>`;
+    // শুধু একটাই Product থাকলে সেটা নিজেই বাছা হয়ে যাবে, নাহলে নিজে বেছে নিতে হবে
+    purchaseProductCombo.setItems(productComboItems(filtered), filtered.length === 1 ? filtered[0].id : "");
     prefillFromProduct();
   }
   brandSelect.addEventListener("change", populateProductsForBrand);
@@ -1071,11 +1377,9 @@ function payCustomerDue(preselectId = "") {
   const dues = db.customers.filter(x => Number(x.due || 0) > 0);
   if (!dues.length) return alert("কোনো Customer-এর Due নেই।");
   openModal("Customer Due Payment", `
-    <label class="block"><span class="text-sm font-medium">Customer</span>
-      <select name="customerId" required class="mt-1 w-full border rounded-lg px-3 py-2">
-        ${dues.map(x => `<option value="${x.id}" ${x.id === preselectId ? "selected" : ""}>${escapeHtml(x.name)} — ${escapeHtml(x.phone)} — Due: ৳ ${money(x.due)}</option>`).join("")}
-      </select>
-    </label>
+    <div class="block"><span class="text-sm font-medium">Customer</span>
+      <div id="payCustomerHost"></div>
+    </div>
     <label class="block"><span class="text-sm font-medium">পরিশোধের পরিমাণ</span>
       <input name="amount" type="number" min="0.01" step="0.01" required class="mt-1 w-full border rounded-lg px-3 py-2" />
     </label>
@@ -1084,13 +1388,23 @@ function payCustomerDue(preselectId = "") {
     const customerId = fd.get("customerId");
     const c = db.customers.find(x => x.id === customerId);
     const amount = Number(fd.get("amount"));
-    if (!c) return;
+    if (!c) return alert("কোন Customer থেকে টাকা নিচ্ছেন সেটা বেছে নিন।");
     if (amount <= 0 || amount > Number(c.due || 0)) return alert("Due-এর চেয়ে বেশি নেওয়া যাবে না।");
     c.due = Number((Number(c.due || 0) - amount).toFixed(2));
     db.customerPayments.unshift({id: crypto.randomUUID(), customerId, customerName: c.name, amount, date: new Date().toISOString()});
     addCashMovement(amount, "due_payment", `${c.name} থেকে বকেয়া আদায়`);
     save(); closeModal();
   });
+
+  createCombo("payCustomerHost", {
+    id: "payCustomerSelect", name: "customerId", value: preselectId,
+    items: customerComboItems({ filter: x => Number(x.due || 0) > 0, sort: "due" }),
+    placeholder: "Customer বেছে নিন", searchPlaceholder: "নাম বা Phone নম্বর লিখুন...",
+    emptyText: "এই নাম/নম্বরে Due-ওয়ালা কোনো Customer নেই", searchable: true,
+  });
+  const focusAmount = () => setTimeout(() => document.querySelector('#modalForm [name="amount"]')?.focus(), 0);
+  document.getElementById("payCustomerSelect").addEventListener("change", focusAmount);
+  if (preselectId) focusAmount();
 }
 
 // Return-এর কারণে কখনো customer বেশি টাকা দিয়ে ফেলেন (advance/credit) —
@@ -1100,11 +1414,9 @@ function refundCustomerAdvance(preselectId = "") {
   const advances = db.customers.filter(x => Number(x.due || 0) < 0);
   if (!advances.length) return alert("কোনো Customer-এর Advance/Credit নেই।");
   openModal("Advance ফেরত দিন", `
-    <label class="block"><span class="text-sm font-medium">Customer</span>
-      <select name="customerId" required class="mt-1 w-full border rounded-lg px-3 py-2">
-        ${advances.map(x => `<option value="${x.id}" ${x.id === preselectId ? "selected" : ""}>${escapeHtml(x.name)} — ${escapeHtml(x.phone)} — Advance: ৳ ${money(Math.abs(x.due))}</option>`).join("")}
-      </select>
-    </label>
+    <div class="block"><span class="text-sm font-medium">Customer</span>
+      <div id="refundCustomerHost"></div>
+    </div>
     <label class="block"><span class="text-sm font-medium">যত টাকা হাতে ফেরত দিচ্ছেন</span>
       <input name="amount" type="number" min="0.01" step="0.01" required class="mt-1 w-full border rounded-lg px-3 py-2" />
     </label>
@@ -1113,7 +1425,7 @@ function refundCustomerAdvance(preselectId = "") {
   `, fd => {
     const customerId = fd.get("customerId");
     const c = db.customers.find(x => x.id === customerId);
-    if (!c) return;
+    if (!c) return alert("কোন Customer-কে Advance ফেরত দিচ্ছেন সেটা বেছে নিন।");
     const advanceAvailable = Math.abs(Number(c.due || 0));
     const amount = Number(fd.get("amount"));
     if (amount <= 0 || amount > advanceAvailable) return alert("Advance-এর চেয়ে বেশি ফেরত দেওয়া যাবে না।");
@@ -1122,6 +1434,16 @@ function refundCustomerAdvance(preselectId = "") {
     addCashMovement(-amount, "advance_refund", `${c.name}-কে Advance ফেরত`);
     save(); closeModal();
   });
+
+  createCombo("refundCustomerHost", {
+    id: "refundCustomerSelect", name: "customerId", value: preselectId,
+    items: customerComboItems({ filter: x => Number(x.due || 0) < 0, sort: "advance" }),
+    placeholder: "Customer বেছে নিন", searchPlaceholder: "নাম বা Phone নম্বর লিখুন...",
+    emptyText: "এই নাম/নম্বরে Advance-ওয়ালা কোনো Customer নেই", searchable: true,
+  });
+  const focusAmount = () => setTimeout(() => document.querySelector('#modalForm [name="amount"]')?.focus(), 0);
+  document.getElementById("refundCustomerSelect").addEventListener("change", focusAmount);
+  if (preselectId) focusAmount();
 }
 
 /* ---------- CASH BOX ---------- */
@@ -1176,21 +1498,27 @@ function addExpense() {
 
 /* ---------- CUSTOMER / SALES ---------- */
 
-function customerOptions() {
-  return db.customers.map(c => `<option value="${c.id}">${escapeHtml(c.name)} — ${escapeHtml(c.phone)}</option>`).join("");
-}
-
 function addCustomer() {
   openModal("নতুন Customer", `
     <label class="block"><span class="text-sm font-medium">Customer Name</span>
       <input name="name" required class="mt-1 w-full border rounded-lg px-3 py-2" />
     </label>
     <label class="block"><span class="text-sm font-medium">Phone Number</span>
-      <input name="phone" required class="mt-1 w-full border rounded-lg px-3 py-2" placeholder="01XXXXXXXXX" />
+      <input name="phone" required inputmode="tel" class="mt-1 w-full border rounded-lg px-3 py-2" placeholder="01XXXXXXXXX" />
+    </label>
+    <label class="block"><span class="text-sm font-medium">আগের বকেয়া (ঐচ্ছিক)</span>
+      <input name="oldDue" type="number" min="0" step="0.01" value="0" class="mt-1 w-full border rounded-lg px-3 py-2" />
+      <span class="block text-xs text-slate-400 mt-1">আগে থেকে বাকি থাকলে লিখুন — এটা শুধু Customer-এর Due-তে যোগ হবে, Cash Box বা আজকের বিক্রিতে নয়।</span>
     </label>
     <button type="submit" class="w-full bg-teal-600 text-white rounded-lg py-2.5">Save Customer</button>
   `, fd => {
-    db.customers.push({id: crypto.randomUUID(), name: String(fd.get("name")).trim(), phone: String(fd.get("phone")).trim(), due: 0});
+    const name = String(fd.get("name") || "").trim();
+    const phone = String(fd.get("phone") || "").trim();
+    const oldDue = Number(Math.max(Number(fd.get("oldDue") || 0), 0).toFixed(2));
+    if (!name || !phone) return alert("Customer name ও Phone দিন।");
+    const c = {id: crypto.randomUUID(), name, phone, due: oldDue};
+    if (oldDue > 0) c.openingDue = oldDue;
+    db.customers.push(c);
     save(); closeModal();
   });
 }
@@ -1234,25 +1562,28 @@ function sellProduct() {
   if (!available.length) return alert("Inventory-তে stock নেই।");
 
   openModal("নতুন Sale", `
-    <label class="block"><span class="text-sm font-medium">Customer</span>
-      <select id="sellCustomerSelect" name="customerId" required class="mt-1 w-full border rounded-lg px-3 py-2">
-        <option value="__new__">+ নতুন Customer (নাম লিখে সরাসরি বিক্রি করুন)</option>
-        ${customerOptions()}
-      </select>
-    </label>
-    <div id="newCustomerFields" class="grid grid-cols-2 gap-3">
-      <label class="block"><span class="text-sm font-medium">নতুন Customer-এর নাম</span>
-        <input id="newCustomerName" name="newCustomerName" autofocus class="mt-1 w-full border rounded-lg px-3 py-2" placeholder="নাম" />
-      </label>
-      <label class="block"><span class="text-sm font-medium">Phone Number</span>
-        <input id="newCustomerPhone" name="newCustomerPhone" class="mt-1 w-full border rounded-lg px-3 py-2" placeholder="01XXXXXXXXX" />
+    <div class="block">
+      <span class="text-sm font-medium">Customer</span>
+      <div id="sellCustomerHost"></div>
+    </div>
+    <div id="newCustomerFields" class="space-y-3">
+      <div class="grid grid-cols-2 gap-3">
+        <label class="block"><span class="text-sm font-medium">নতুন Customer-এর নাম</span>
+          <input id="newCustomerName" name="newCustomerName" class="mt-1 w-full border rounded-lg px-3 py-2" placeholder="নাম" />
+        </label>
+        <label class="block"><span class="text-sm font-medium">Phone Number</span>
+          <input id="newCustomerPhone" name="newCustomerPhone" inputmode="tel" class="mt-1 w-full border rounded-lg px-3 py-2" placeholder="01XXXXXXXXX" />
+        </label>
+      </div>
+      <label class="block"><span class="text-sm font-medium">আগের বকেয়া (ঐচ্ছিক)</span>
+        <input name="newCustomerOldDue" type="number" min="0" step="0.01" value="0" class="mt-1 w-full border rounded-lg px-3 py-2" />
+        <span class="block text-xs text-slate-400 mt-1">আগে থেকে বাকি থাকলে লিখুন — এটা শুধু Customer-এর Due-তে যোগ হবে, Cash Box বা আজকের বিক্রিতে নয়।</span>
       </label>
     </div>
-    <label class="block"><span class="text-sm font-medium">Product</span>
-      <select id="sellProduct" name="productId" required class="mt-1 w-full border rounded-lg px-3 py-2">
-        ${available.map(p => `<option value="${p.id}">${escapeHtml(p.name)} — ${p.stock}kg</option>`).join("")}
-      </select>
-    </label>
+    <div class="block">
+      <span class="text-sm font-medium">Product</span>
+      <div id="sellProductHost"></div>
+    </div>
     <div class="grid grid-cols-2 gap-3">
       <label class="block"><span class="text-sm font-medium">Qty (kg)</span>
         <input name="qty" type="number" min="0.01" step="0.01" required class="mt-1 w-full border rounded-lg px-3 py-2" />
@@ -1274,37 +1605,65 @@ function sellProduct() {
     const productId = fd.get("productId");
     const customerId = fd.get("customerId");
     const p = db.products.find(x => x.id === productId);
-
-    let c;
-    if (customerId === "__new__") {
-      const name = String(fd.get("newCustomerName") || "").trim();
-      const phone = String(fd.get("newCustomerPhone") || "").trim();
-      if (!name || !phone) return alert("নতুন Customer-এর নাম ও Phone দিন।");
-      c = {id: crypto.randomUUID(), name, phone, due: 0};
-      db.customers.push(c);
-    } else {
-      c = db.customers.find(x => x.id === customerId);
-    }
+    if (!p) return alert("কোন Product বিক্রি করছেন সেটা বেছে নিন।");
 
     const qty = Number(fd.get("qty"));
     const price = Number(fd.get("sellPrice"));
+    if (!(qty > 0)) return alert("কত kg বিক্রি করছেন সেটা দিন।");
+    if (qty > p.stock) return alert(`${p.name}-এর stock আছে মাত্র ${p.stock} kg।`);
+
+    // Customer আগে যাচাই — sale ঠিক না হলে যেন অকারণে নতুন Customer তৈরি হয়ে না যায়
+    let c;
+    let isNewCustomer = false;
+    if (customerId === "__new__") {
+      const name = String(fd.get("newCustomerName") || "").trim();
+      const phone = String(fd.get("newCustomerPhone") || "").trim();
+      const oldDue = Number(Math.max(Number(fd.get("newCustomerOldDue") || 0), 0).toFixed(2));
+      if (!name || !phone) return alert("নতুন Customer-এর নাম ও Phone দিন।");
+      c = {id: crypto.randomUUID(), name, phone, due: oldDue};
+      if (oldDue > 0) c.openingDue = oldDue;
+      isNewCustomer = true;
+    } else {
+      c = db.customers.find(x => x.id === customerId);
+      if (!c) return alert("কোন Customer-কে বিক্রি করছেন সেটা বেছে নিন।");
+    }
+
     const total = qty * price;
     const paid = Math.min(Math.max(Number(fd.get("paid")), 0), total);
-    if (!p || !c || qty <= 0 || qty > p.stock) return alert("Invalid product/quantity.");
+    if (isNewCustomer) db.customers.push(c);
     p.stock = Number((p.stock - qty).toFixed(2));
-    c.due = Number((c.due || 0) + (total - paid));
+    c.due = Number((Number(c.due || 0) + (total - paid)).toFixed(2));
     db.sales.unshift({id: crypto.randomUUID(), productId: p.id, productName: p.name, customerId: c.id, customerName: c.name, customerPhone: c.phone, qty, sellPrice: price, total, paid, due: total - paid, date: new Date().toISOString()});
     if (paid > 0) addCashMovement(paid, "sale", `${p.name} বিক্রি (${c.name})`);
     save(); closeModal();
   });
 
+  createCombo("sellCustomerHost", {
+    id: "sellCustomerSelect", name: "customerId", value: "__new__",
+    items: customerComboItems({ includeNew: true }),
+    placeholder: "Customer বেছে নিন", searchPlaceholder: "নাম বা Phone নম্বর লিখুন...",
+    emptyText: "এই নাম/নম্বরের কোনো Customer নেই", searchable: true,
+    // খুঁজে না পেয়ে "নতুন Customer" বাছলে যা লিখেছিলেন সেটা নাম/Phone ঘরে বসে যাবে
+    onPinnedPick: (typed) => {
+      const t = typed.trim();
+      const nameEl = document.getElementById("newCustomerName");
+      const phoneEl = document.getElementById("newCustomerPhone");
+      if (/^[\d০-৯+\-\s]{5,}$/.test(t)) phoneEl.value = t; else nameEl.value = t;
+      (nameEl.value ? phoneEl : nameEl).focus();
+    },
+  });
+  createCombo("sellProductHost", {
+    id: "sellProduct", name: "productId", value: "",
+    items: productComboItems(available),
+    placeholder: "Product বেছে নিন", searchPlaceholder: "Product বা Brand-এর নাম লিখুন...",
+    emptyText: "এই নামে কোনো Product নেই (বা stock শেষ)",
+  });
+
   const custSelect = document.getElementById("sellCustomerSelect");
   const newFields = document.getElementById("newCustomerFields");
   const newName = document.getElementById("newCustomerName");
-  const newPhone = document.getElementById("newCustomerPhone");
   function toggleCustomerFields() {
-    const isNew = custSelect.value === "__new__";
-    newFields.style.display = isNew ? "grid" : "none";
+    newFields.style.display = custSelect.value === "__new__" ? "" : "none";
   }
   custSelect.addEventListener("change", toggleCustomerFields);
   toggleCustomerFields();
@@ -1326,7 +1685,8 @@ function sellProduct() {
   productSel.addEventListener("change", fillDefaultPrice);
   [qty, price, paid].forEach(x => x.addEventListener("input", calc));
   fillDefaultPrice();
-  setTimeout(() => newName.focus(), 50);
+  // নতুন Customer মোডে থাকলে নামের ঘরে cursor — তবে এর মধ্যে কেউ dropdown খুলে ফেললে focus কেড়ে নেওয়া হবে না
+  setTimeout(() => { if (!openComboCloser && custSelect.value === "__new__") newName.focus(); }, 50);
 }
 
 function quickSell(id) {
@@ -1400,6 +1760,7 @@ const PAGE_SIZE = 6;
 let productMgmtPage = 1;
 let inventoryPage = 1;
 let customerPage = 1;
+let customerFilter = "all"; // all | due | paid
 let cashLedgerPage = 1;
 
 function paginate(array, page, pageSize) {
@@ -1477,8 +1838,14 @@ function renderManagement() {
 
 function renderCustomers() {
   const list = document.getElementById("customerList");
-  const filter = document.getElementById("customerDueFilter")?.value || "all";
-  const rows = db.customers.filter(c => filter === "all" || (filter === "due" && Number(c.due || 0) > 0) || (filter === "paid" && Number(c.due || 0) <= 0));
+  const filter = customerFilter;
+  const q = normSearch(document.getElementById("customerSearch")?.value);
+  const rows = db.customers.filter(c =>
+    (filter === "all" || (filter === "due" && Number(c.due || 0) > 0) || (filter === "paid" && Number(c.due || 0) <= 0)) &&
+    (!q || (normSearch(c.name) + "|" + normSearch(c.phone)).includes(q))
+  );
+  const countEl = document.getElementById("customerCount");
+  if (countEl) countEl.textContent = (q || filter !== "all") ? `${rows.length} জন পাওয়া গেছে` : `মোট ${db.customers.length} জন Customer`;
   const cp = paginate(rows, customerPage, PAGE_SIZE);
   customerPage = cp.page;
   list.innerHTML = cp.items.length ? cp.items.map(c => `
@@ -1705,7 +2072,28 @@ document.getElementById("customerPaymentBtn").onclick = () => payCustomerDue();
 document.getElementById("addCashBtn").onclick = addManualCash;
 document.getElementById("addExpenseBtn").onclick = addExpense;
 document.getElementById("search").oninput = () => { inventoryPage = 1; render(); };
-document.getElementById("customerDueFilter").onchange = () => { customerPage = 1; renderCustomers(); };
+document.querySelectorAll("#customerDueFilter button").forEach(btn => {
+  btn.onclick = () => {
+    customerFilter = btn.dataset.filter;
+    customerPage = 1;
+    document.querySelectorAll("#customerDueFilter button").forEach(b => b.classList.toggle("is-on", b === btn));
+    renderCustomers();
+  };
+});
+const customerSearchEl = document.getElementById("customerSearch");
+const customerSearchClear = document.getElementById("customerSearchClear");
+customerSearchEl.oninput = () => {
+  customerPage = 1;
+  customerSearchClear.hidden = !customerSearchEl.value;
+  renderCustomers();
+};
+customerSearchClear.onclick = () => {
+  customerSearchEl.value = "";
+  customerSearchClear.hidden = true;
+  customerPage = 1;
+  renderCustomers();
+  customerSearchEl.focus();
+};
 document.getElementById("footerResetBtn").onclick = resetAllData;
 document.getElementById("syncNowBtn").onclick = manualSync;
 document.getElementById("footerLockBtn").onclick = () => lockApp("Password দিয়ে আবার Login করুন।");
@@ -1777,6 +2165,15 @@ function downloadArchiveCsv() {
   URL.revokeObjectURL(a.href);
 }
 
+createCombo("archiveTypeHost", {
+  id: "archiveType", value: "sales", placeholder: "ধরন বেছে নিন",
+  items: [
+    { value: "sales", label: "Sales", tone: "blue" },
+    { value: "returns", label: "Returns", tone: "amber" },
+    { value: "cashLedger", label: "Cash History", tone: "teal" },
+    { value: "customerPayments", label: "Customer Payments", tone: "slate" },
+  ],
+});
 document.getElementById("archiveLoadBtn").onclick = loadArchive;
 document.getElementById("archiveCsvBtn").onclick = downloadArchiveCsv;
 
