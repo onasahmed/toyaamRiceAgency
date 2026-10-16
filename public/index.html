@@ -190,10 +190,14 @@
       </section>
 
       <section class="bg-white rounded-xl shadow-sm overflow-hidden">
-        <div class="p-4 border-b">
-          <h2 class="font-bold text-lg">Recent Sales</h2>
-          <p class="text-sm text-slate-500">বিক্রয়ের সময় যে দামে বিক্রি করেছেন তা এখানে সংরক্ষিত হবে</p>
+        <div class="p-4 border-b flex items-center justify-between gap-3">
+          <div>
+            <h2 class="font-bold text-lg">Recent Sales</h2>
+            <p class="text-sm text-slate-500">বিক্রয়ের সময় যে দামে বিক্রি করেছেন তা এখানে সংরক্ষিত হবে</p>
+          </div>
+          <button id="salesToggle" type="button" class="px-3 py-2 rounded-lg bg-slate-100 text-slate-600 text-sm hover:bg-slate-200 transition shrink-0">▼ দেখুন</button>
         </div>
+        <div id="salesContent" class="hidden">
         <!-- Mobile: card list -->
         <div id="salesCards" class="sm:hidden divide-y"></div>
         <!-- Desktop/tablet: table -->
@@ -213,6 +217,8 @@
             </thead>
             <tbody id="salesBody"></tbody>
           </table>
+        </div>
+        <div id="salesPagination"></div>
         </div>
       </section>
 
@@ -1762,6 +1768,7 @@ let inventoryPage = 1;
 let customerPage = 1;
 let customerFilter = "all"; // all | due | paid
 let cashLedgerPage = 1;
+let salesPage = 1;
 
 function paginate(array, page, pageSize) {
   const totalPages = Math.max(1, Math.ceil(array.length / pageSize));
@@ -1964,7 +1971,10 @@ function render() {
 
   renderCustomers();
 
-  document.getElementById("salesCards").innerHTML = db.sales.length ? db.sales.slice(0, 20).map(s => `
+  const sp = paginate(db.sales, salesPage, PAGE_SIZE);
+  salesPage = sp.page;
+
+  document.getElementById("salesCards").innerHTML = db.sales.length ? sp.items.map(s => `
     <div class="p-3 space-y-1 border-l-4 border-l-indigo-500 bg-indigo-50/30">
       <div class="flex items-center justify-between text-xs text-slate-400">
         <span>${new Date(s.date).toLocaleString("en-BD")}</span>
@@ -1978,7 +1988,7 @@ function render() {
       </div>
     </div>`).join("") : `<div class="p-6 text-center text-slate-400">এখনো কোনো sale নেই।</div>`;
 
-  document.getElementById("salesBody").innerHTML = db.sales.length ? db.sales.slice(0, 20).map(s => `
+  document.getElementById("salesBody").innerHTML = db.sales.length ? sp.items.map(s => `
     <tr class="border-t">
       <td class="p-2 sm:p-3">${new Date(s.date).toLocaleString("en-BD")}</td>
       <td class="p-2 sm:p-3">${escapeHtml(s.customerName || "—")}<div class="text-xs text-slate-400">${escapeHtml(s.customerPhone || "")}</div></td>
@@ -1989,6 +1999,11 @@ function render() {
       <td class="p-2 sm:p-3 text-right ${Number(s.due || 0) > 0 ? 'text-red-600 font-semibold' : Number(s.due || 0) < 0 ? 'text-blue-600 font-semibold' : ''}">৳ ${money(s.due || 0)}</td>
       <td class="p-2 sm:p-3 text-center">${Number(s.qty) > 0 ? `<button type="button" onclick="returnSale('${s.id}')" class="px-3 py-1.5 rounded-lg bg-orange-50 border border-orange-200 text-orange-700 text-xs font-semibold hover:bg-orange-100">Return</button>` : '—'}</td>
     </tr>`).join("") : `<tr><td colspan="8" class="p-8 text-center text-slate-400">এখনো কোনো sale নেই।</td></tr>`;
+
+  renderPaginationControls("salesPagination", sp.page, sp.totalPages, (newPage) => {
+    salesPage = newPage;
+    render();
+  });
 
   document.getElementById("returnsCards").innerHTML = db.returns.length ? db.returns.slice(0, 20).map(r => `
     <div class="p-3 space-y-1 border-l-4 border-l-orange-500 bg-orange-50/30">
@@ -2110,6 +2125,7 @@ function setupCollapsible(toggleBtnId, contentId) {
   };
 }
 setupCollapsible("productMgmtToggle", "productMgmtContent");
+setupCollapsible("salesToggle", "salesContent");
 setupCollapsible("returnsToggle", "returnsContent");
 setupCollapsible("brandMgmtToggle", "brandMgmtContent");
 setupCollapsible("cashHistoryToggle", "cashHistoryContent");
